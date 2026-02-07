@@ -40,17 +40,30 @@ enum AspectRatio: String, CaseIterable, Codable, Identifiable {
 struct Frame: Identifiable, Codable {
     var id: UUID = UUID()
     var dateCreated: Date
-    
+
     /// Crop region as percentages (0.0 to 1.0) of original image
     var cropRect: CropRect
-    
+
     /// The aspect ratio used for this crop
     var aspectRatio: AspectRatio
-    
-    init(cropRect: CropRect, aspectRatio: AspectRatio = .free) {
+
+    /// User-defined title for this frame
+    var title: String
+
+    /// User's reflection/notes about this frame
+    var note: String
+
+    init(cropRect: CropRect, aspectRatio: AspectRatio = .free, title: String = "", note: String = "") {
         self.dateCreated = Date()
         self.cropRect = cropRect
         self.aspectRatio = aspectRatio
+        self.title = title
+        self.note = note
+    }
+
+    /// Auto-generated default title based on creation order
+    var displayTitle: String {
+        title.isEmpty ? "Frame" : title
     }
 }
 

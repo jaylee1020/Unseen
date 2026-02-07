@@ -2,109 +2,65 @@ import SwiftUI
 
 // MARK: - Chapter 2: Your Lens
 /// Teaches about focal length and perspective
+/// Enhanced: Continuous scrubber, interactive camera UI, ProceduralScene, Progressive Reveal
 struct Chapter2View: View {
-    @State private var selectedFocalLength: FocalLength = .wide35
-    
+    @State private var focalLengthValue: CGFloat = 35 // Continuous 13-120mm
+    @State private var selectedLensButton: String? = nil
+
+    private var currentFocalLength: FocalLength {
+        FocalLength.nearest(to: focalLengthValue)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-            // Introduction
-            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                SectionHeader(title: "Understanding Focal Length")
-                
-                Text("When photographers talk about \"millimeters\" — 24mm, 35mm, 50mm, 77mm — they're describing the **focal length** of a lens.")
+            // Section 1: Interactive focal length explorer
+            RevealSection(title: "See the Difference") {
+                VStack(spacing: Theme.Spacing.md) {
+                    // Enhanced preview with perspective simulation
+                    FocalLengthPreviewEnhanced(focalLength: focalLengthValue)
+
+                    // Continuous scrubber
+                    FocalLengthScrubber(value: $focalLengthValue)
+
+                    // Compact feeling label
+                    Text(currentFocalLength.feeling)
+                        .font(Theme.Typography.subheadline)
+                        .foregroundStyle(Color.accentColor)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, Theme.Spacing.xxs)
+                        .animation(Theme.Animation.quick, value: currentFocalLength)
+                }
+            } detail: {
+                Text("Focal length changes how much you capture (**field of view**) and how the scene **feels**. Lower mm = wider view. Higher mm = tighter, more compressed.")
                     .font(Theme.Typography.body)
                     .foregroundStyle(.secondary)
-                
-                Text("Focal length changes two things: how much of the scene you capture (**field of view**) and how the scene **feels**.")
-                    .font(Theme.Typography.body)
             }
-            
+
             Divider()
                 .padding(.vertical, Theme.Spacing.sm)
-            
-            // Interactive focal length slider
-            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                SectionHeader(title: "See the Difference")
-                
-                Text("Drag the slider to see how the same scene looks at different focal lengths.")
-                    .font(Theme.Typography.body)
-                    .foregroundStyle(.secondary)
-                
-                // Focal length preview
-                FocalLengthPreview(focalLength: selectedFocalLength)
-                
-                // Focal length selector
-                FocalLengthSlider(selected: $selectedFocalLength)
-                
-                // Description
-                FocalLengthDescription(focalLength: selectedFocalLength)
+
+            // Section 2: The 1x Trap — replaced with interactive ProceduralScene
+            SimpleRevealSection(
+                title: "The 1x Trap",
+                explanation: "Your iPhone has multiple lenses. The ultra-wide (0.5x) makes spaces vast. The telephoto (2x, 3x) isolates subjects. **Choose your lens before you shoot.**"
+            ) {
+                ProceduralScene(preset: .focalTrap, height: 140, expandWidth: true)
             }
-            
+
             Divider()
                 .padding(.vertical, Theme.Spacing.sm)
-            
-            // The 1x Trap
-            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                SectionHeader(title: "The 1x Trap")
-                
-                IllustrationPlaceholder(
-                    height: 140,
-                    iconName: "1.circle.fill",
-                    label: "1x Trap Illustration",
-                    expandWidth: true
-                )
-                
-                Text("Most people never leave 1x. They point, tap, done.")
-                    .font(Theme.Typography.body)
-                    .foregroundStyle(.secondary)
-                
-                Text("But your iPhone has **multiple lenses** with different perspectives. Each one tells a different story.")
-                    .font(Theme.Typography.body)
-                
-                Text("The ultra-wide (0.5x) makes spaces feel vast and dramatic. The telephoto (2x, 3x, 5x) isolates subjects and compresses distance. **The best photographers choose their lens before they shoot.**")
-                    .font(Theme.Typography.body)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Divider()
-                .padding(.vertical, Theme.Spacing.sm)
-            
-            // iPhone Camera Guide
-            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                SectionHeader(title: "Your iPhone's Lenses")
-                
-                Text("Here's where to find your lens options:")
-                    .font(Theme.Typography.body)
-                    .foregroundStyle(.secondary)
-                
-                // Camera app guide
-                CameraGuideCard(
-                    title: "In the Camera App",
-                    steps: [
-                        "Open the Camera app",
-                        "Look for the lens buttons above the shutter: 0.5x, 1x, 2x, 3x, or 5x",
-                        "Tap to switch, or tap and hold for fine adjustments"
-                    ]
-                )
-                
-                CameraGuideCard(
-                    title: "Pro Tip: Settings",
-                    steps: [
-                        "Go to Settings → Camera",
-                        "Turn on \"Lens Correction\" for ultra-wide",
-                        "Explore \"Preserve Settings\" to keep your preferences"
-                    ]
-                )
-                
-                // Illustration placeholder
-                IllustrationPlaceholder(
-                    height: 160,
-                    iconName: "iphone.rear.camera",
-                    label: "iPhone Camera Interface",
-                    expandWidth: true
+
+            // Section 3: Interactive Camera UI Replica
+            SimpleRevealSection(
+                title: "Your iPhone's Lenses",
+                explanation: "Tap the lens buttons to switch. Long-press for fine adjustment. Explore each lens to find the right perspective."
+            ) {
+                CameraUIReplica(
+                    selectedLens: $selectedLensButton,
+                    focalLength: $focalLengthValue
                 )
             }
-            
+
             Spacer()
                 .frame(height: Theme.Spacing.xl)
         }
@@ -118,9 +74,9 @@ enum FocalLength: CaseIterable, Identifiable {
     case wide35
     case standard48
     case telephoto77
-    
+
     var id: String { displayName }
-    
+
     var displayName: String {
         switch self {
         case .ultraWide24: return "24mm"
@@ -129,7 +85,7 @@ enum FocalLength: CaseIterable, Identifiable {
         case .telephoto77: return "77mm"
         }
     }
-    
+
     var shortName: String {
         switch self {
         case .ultraWide24: return "0.5x"
@@ -138,20 +94,16 @@ enum FocalLength: CaseIterable, Identifiable {
         case .telephoto77: return "3x"
         }
     }
-    
-    var description: String {
+
+    var mmValue: CGFloat {
         switch self {
-        case .ultraWide24:
-            return "Ultra-wide: Everything feels expansive and dramatic. Great for architecture, landscapes, and creating a sense of space."
-        case .wide35:
-            return "Wide: Natural perspective, similar to human vision. Versatile for everyday photography and street scenes."
-        case .standard48:
-            return "Standard: Slight compression begins to isolate subjects. Perfect for portraits and food photography."
-        case .telephoto77:
-            return "Telephoto: Strong compression, intimate feeling. Ideal for portraits, details, and creating depth."
+        case .ultraWide24: return 24
+        case .wide35: return 35
+        case .standard48: return 48
+        case .telephoto77: return 77
         }
     }
-    
+
     var feeling: String {
         switch self {
         case .ultraWide24: return "Expansive • Dramatic • Open"
@@ -160,7 +112,7 @@ enum FocalLength: CaseIterable, Identifiable {
         case .telephoto77: return "Intimate • Compressed • Detailed"
         }
     }
-    
+
     var index: Int {
         switch self {
         case .ultraWide24: return 0
@@ -169,86 +121,298 @@ enum FocalLength: CaseIterable, Identifiable {
         case .telephoto77: return 3
         }
     }
+
+    static func nearest(to mm: CGFloat) -> FocalLength {
+        let sorted = allCases.sorted { abs($0.mmValue - mm) < abs($1.mmValue - mm) }
+        return sorted.first ?? .wide35
+    }
 }
 
-// MARK: - Focal Length Preview
-struct FocalLengthPreview: View {
-    let focalLength: FocalLength
-    
-    // Simulate field of view change with scale
-    private var scale: CGFloat {
-        switch focalLength {
-        case .ultraWide24: return 0.6
-        case .wide35: return 0.8
-        case .standard48: return 1.0
-        case .telephoto77: return 1.3
-        }
+// MARK: - Enhanced Focal Length Preview
+struct FocalLengthPreviewEnhanced: View {
+    let focalLength: CGFloat // Continuous 13-120mm
+
+    // Non-uniform scaling for foreground vs background
+    private var backgroundScale: CGFloat {
+        let normalized = (focalLength - 13) / (120 - 13)
+        return 0.5 + normalized * 1.2
     }
-    
+
+    private var foregroundScale: CGFloat {
+        let normalized = (focalLength - 13) / (120 - 13)
+        return 0.4 + normalized * 1.5
+    }
+
     var body: some View {
         ZStack {
-            // Placeholder background - represents the scene
             RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
                 .fill(
                     LinearGradient(
-                        colors: [.blue.opacity(0.3), .purple.opacity(0.3)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                        colors: [.blue.opacity(0.4), .cyan.opacity(0.15)],
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
                 )
-                .overlay {
-                    // Scene elements that scale
-                    VStack(spacing: Theme.Spacing.md) {
-                        // "Mountain" shapes
-                        HStack(spacing: Theme.Spacing.lg) {
-                            Triangle()
-                                .fill(.gray.opacity(0.5))
-                                .frame(width: 60, height: 50)
-                            
-                            Triangle()
-                                .fill(.gray.opacity(0.7))
-                                .frame(width: 80, height: 70)
-                            
-                            Triangle()
-                                .fill(.gray.opacity(0.5))
-                                .frame(width: 50, height: 40)
-                        }
-                        .scaleEffect(scale)
-                        
-                        // "Person" silhouette
-                        VStack(spacing: 4) {
-                            Circle()
-                                .fill(.primary.opacity(0.7))
-                                .frame(width: 24, height: 24)
-                            
-                            Capsule()
-                                .fill(.primary.opacity(0.7))
-                                .frame(width: 36, height: 48)
-                        }
-                        .scaleEffect(scale)
-                    }
+
+            // Scene with perspective compression
+            Canvas { context, size in
+                let w = size.width
+                let h = size.height
+                let bgS = backgroundScale
+                let fgS = foregroundScale
+
+                // Ground
+                context.fill(
+                    Path(CGRect(x: 0, y: h * 0.55, width: w, height: h * 0.45)),
+                    with: .color(.green.opacity(0.2))
+                )
+
+                // Background mountains
+                let mountainY = h * 0.5
+                let mountains: [(CGFloat, CGFloat, CGFloat, Double)] = [
+                    (0.3, 60, 50, 0.35), (0.55, 80, 70, 0.3), (0.75, 50, 40, 0.25)
+                ]
+
+                for (cx, baseW, baseH, opacity) in mountains {
+                    var m = Path()
+                    let mW = baseW * bgS
+                    let mH = baseH * bgS
+                    m.move(to: CGPoint(x: w * cx - mW/2, y: mountainY + mH/2))
+                    m.addLine(to: CGPoint(x: w * cx, y: mountainY - mH/2))
+                    m.addLine(to: CGPoint(x: w * cx + mW/2, y: mountainY + mH/2))
+                    m.closeSubpath()
+                    context.fill(m, with: .color(.indigo.opacity(opacity)))
                 }
-                .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.medium))
-            
+
+                // Foreground person
+                let personX = w * 0.5
+                let personBaseY = h * 0.6
+                let headR = 12 * fgS
+                let bodyW: CGFloat = 18 * fgS
+                let bodyH: CGFloat = 24 * fgS
+
+                context.fill(
+                    Path(ellipseIn: CGRect(x: personX - headR, y: personBaseY - headR * 2 - bodyH, width: headR * 2, height: headR * 2)),
+                    with: .color(.primary.opacity(0.7))
+                )
+                context.fill(
+                    Path(roundedRect: CGRect(x: personX - bodyW/2, y: personBaseY - bodyH, width: bodyW, height: bodyH), cornerRadius: 4),
+                    with: .color(.primary.opacity(0.7))
+                )
+            }
+            .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.medium))
+
             // Focal length label
             VStack {
                 HStack {
-                    Text(focalLength.displayName)
+                    Text("\(Int(focalLength))mm")
                         .font(Theme.Typography.headline)
+                        .monospacedDigit()
                         .padding(.horizontal, Theme.Spacing.sm)
                         .padding(.vertical, Theme.Spacing.xs)
                         .background(.ultraThinMaterial)
                         .clipShape(Capsule())
-                    
+
                     Spacer()
                 }
                 .padding(Theme.Spacing.sm)
-                
+
                 Spacer()
             }
         }
         .frame(height: 220)
-        .animation(Theme.Animation.spring, value: focalLength)
+        .animation(Theme.Animation.quick, value: focalLength)
+    }
+}
+
+// MARK: - Continuous Focal Length Scrubber
+struct FocalLengthScrubber: View {
+    @Binding var value: CGFloat
+    @State private var isDragging = false
+
+    private let ticks: [(CGFloat, String)] = [
+        (13, "13"), (24, "24"), (35, "35"), (48, "48"), (77, "77"), (120, "120")
+    ]
+
+    var body: some View {
+        VStack(spacing: Theme.Spacing.xxs) {
+            GeometryReader { geometry in
+                let width = geometry.size.width
+
+                ZStack(alignment: .leading) {
+                    // Track
+                    Capsule()
+                        .fill(Theme.Colors.secondaryBackground)
+                        .frame(height: 6)
+
+                    // Filled track
+                    Capsule()
+                        .fill(Color.accentColor.opacity(0.6))
+                        .frame(width: positionForValue(value, in: width), height: 6)
+
+                    // Tick marks
+                    ForEach(ticks, id: \.0) { tick in
+                        let x = positionForValue(tick.0, in: width)
+                        Rectangle()
+                            .fill(Color.secondary.opacity(0.4))
+                            .frame(width: 1, height: 14)
+                            .position(x: x, y: 12)
+                    }
+
+                    // Thumb
+                    Circle()
+                        .fill(Color.accentColor)
+                        .frame(width: isDragging ? 28 : 22, height: isDragging ? 28 : 22)
+                        .shadow(color: .accentColor.opacity(0.3), radius: isDragging ? 8 : 4)
+                        .position(x: positionForValue(value, in: width), y: 12)
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { drag in
+                                    isDragging = true
+                                    let newValue = valueForPosition(drag.location.x, in: width)
+                                    let clampedValue = max(13, min(120, newValue))
+
+                                    // Snap to tick marks
+                                    let snapDistance: CGFloat = 3
+                                    var snappedValue = clampedValue
+                                    for (tickValue, _) in ticks {
+                                        if abs(clampedValue - tickValue) < snapDistance {
+                                            snappedValue = tickValue
+                                            if abs(value - tickValue) >= snapDistance {
+                                                HapticManager.selection()
+                                            }
+                                            break
+                                        }
+                                    }
+                                    value = snappedValue
+                                }
+                                .onEnded { _ in
+                                    isDragging = false
+                                    HapticManager.lightImpact()
+                                }
+                        )
+                }
+                .frame(height: 24)
+            }
+            .frame(height: 24)
+
+            // Tick labels
+            HStack {
+                Text("Wide")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("Tele")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .animation(Theme.Animation.snappy, value: isDragging)
+    }
+
+    private func positionForValue(_ val: CGFloat, in width: CGFloat) -> CGFloat {
+        let normalized = (val - 13) / (120 - 13)
+        return normalized * width
+    }
+
+    private func valueForPosition(_ pos: CGFloat, in width: CGFloat) -> CGFloat {
+        let normalized = pos / width
+        return 13 + normalized * (120 - 13)
+    }
+}
+
+// MARK: - Camera UI Replica
+struct CameraUIReplica: View {
+    @Binding var selectedLens: String?
+    @Binding var focalLength: CGFloat
+
+    private let lensOptions: [(String, CGFloat)] = [
+        ("0.5", 13), ("1", 26), ("2", 48), ("3", 77), ("5", 120)
+    ]
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.black.opacity(0.9))
+
+            VStack(spacing: 0) {
+                // Mini viewfinder
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(
+                            LinearGradient(
+                                colors: [.blue.opacity(0.3), .cyan.opacity(0.15)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+
+                    Canvas { context, size in
+                        let w = size.width
+                        let h = size.height
+                        let scale = (focalLength - 13) / (120 - 13)
+                        let mScale = 0.5 + scale * 1.2
+
+                        var mountain = Path()
+                        mountain.move(to: CGPoint(x: w * 0.5 - 30 * mScale, y: h * 0.8))
+                        mountain.addLine(to: CGPoint(x: w * 0.5, y: h * (0.6 - scale * 0.3)))
+                        mountain.addLine(to: CGPoint(x: w * 0.5 + 30 * mScale, y: h * 0.8))
+                        mountain.closeSubpath()
+                        context.fill(mountain, with: .color(.white.opacity(0.2)))
+                    }
+                }
+                .frame(height: 100)
+                .padding(.horizontal, Theme.Spacing.sm)
+                .padding(.top, Theme.Spacing.sm)
+
+                Spacer()
+
+                // Lens selector bar
+                HStack(spacing: 0) {
+                    ForEach(lensOptions, id: \.0) { (name, mm) in
+                        Button {
+                            withAnimation(Theme.Animation.spring) {
+                                selectedLens = name
+                                focalLength = mm
+                            }
+                            HapticManager.selection()
+                        } label: {
+                            let isSelected = selectedLens == name ||
+                                (selectedLens == nil && name == "1")
+                            Text(name)
+                                .font(.system(size: 12, weight: isSelected ? .bold : .regular))
+                                .foregroundStyle(isSelected ? .black : .white.opacity(0.7))
+                                .frame(width: 32, height: 32)
+                                .background(
+                                    Circle()
+                                        .fill(isSelected ? Color.yellow : Color.clear)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, Theme.Spacing.md)
+                .padding(.vertical, Theme.Spacing.xs)
+                .background(
+                    Capsule()
+                        .fill(.white.opacity(0.15))
+                )
+                .padding(.horizontal, Theme.Spacing.lg)
+
+                // Shutter button
+                ZStack {
+                    Circle()
+                        .stroke(.white.opacity(0.8), lineWidth: 3)
+                        .frame(width: 44, height: 44)
+                    Circle()
+                        .fill(.white.opacity(0.9))
+                        .frame(width: 36, height: 36)
+                }
+                .padding(.vertical, Theme.Spacing.sm)
+            }
+        }
+        .frame(height: 220)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 }
 
@@ -261,96 +425,6 @@ struct Triangle: Shape {
         path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
         path.closeSubpath()
         return path
-    }
-}
-
-// MARK: - Focal Length Slider
-struct FocalLengthSlider: View {
-    @Binding var selected: FocalLength
-    
-    var body: some View {
-        HStack(spacing: 0) {
-            ForEach(FocalLength.allCases) { focal in
-                Button {
-                    withAnimation(Theme.Animation.spring) {
-                        selected = focal
-                    }
-                } label: {
-                    VStack(spacing: Theme.Spacing.xxs) {
-                        Text(focal.shortName)
-                            .font(Theme.Typography.headline)
-                        
-                        Text(focal.displayName)
-                            .font(Theme.Typography.caption)
-                    }
-                    .foregroundStyle(selected == focal ? .white : .primary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Theme.Spacing.sm)
-                    .background(
-                        RoundedRectangle(cornerRadius: Theme.CornerRadius.small)
-                            .fill(selected == focal ? Color.accentColor : Color.clear)
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(Theme.Spacing.xxs)
-        .background(Theme.Colors.secondaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.medium))
-    }
-}
-
-// MARK: - Focal Length Description
-struct FocalLengthDescription: View {
-    let focalLength: FocalLength
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-            Text(focalLength.feeling)
-                .font(Theme.Typography.subheadline)
-                .foregroundStyle(Color.accentColor)
-            
-            Text(focalLength.description)
-                .font(Theme.Typography.body)
-                .foregroundStyle(.secondary)
-        }
-        .padding(Theme.Spacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.Colors.secondaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.medium))
-        .animation(Theme.Animation.quick, value: focalLength)
-    }
-}
-
-// MARK: - Camera Guide Card
-struct CameraGuideCard: View {
-    let title: String
-    let steps: [String]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            Text(title)
-                .font(Theme.Typography.headline)
-            
-            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
-                    HStack(alignment: .top, spacing: Theme.Spacing.sm) {
-                        Text("\(index + 1).")
-                            .font(Theme.Typography.subheadline)
-                            .foregroundStyle(Color.accentColor)
-                            .frame(width: 20)
-                        
-                        Text(step)
-                            .font(Theme.Typography.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-        }
-        .padding(Theme.Spacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.Colors.secondaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.medium))
     }
 }
 

@@ -85,11 +85,12 @@ struct ProjectDetailView: View {
                         .padding(.horizontal, Theme.Spacing.lg)
                     }
 
-                    // Frame thumbnails
+                    // Frame thumbnails (enhanced with title editing + notes)
                     if !project.frames.isEmpty, let originalImage = project.originalImage {
                         FrameThumbnailGrid(
                             frames: project.frames,
                             originalImage: originalImage,
+                            project: project,
                             onFrameTap: { frame in
                                 HapticManager.mediumImpact()
                                 selectedFrame = frame
@@ -186,17 +187,13 @@ struct FrameOverlayView: View {
     }
 }
 
-// MARK: - Frame Thumbnail Grid
+// MARK: - Frame Thumbnail Grid (Enhanced with title editing & notes)
 struct FrameThumbnailGrid: View {
     let frames: [Frame]
     let originalImage: UIImage
+    let project: Project
     let onFrameTap: (Frame) -> Void
-
-    private let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible()),
-        GridItem(.flexible())
-    ]
+    @EnvironmentObject var projectStorage: ProjectStorage
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
@@ -204,57 +201,205 @@ struct FrameThumbnailGrid: View {
                 .font(Theme.Typography.headline)
                 .padding(.horizontal, Theme.Spacing.xs)
 
-            LazyVGrid(columns: columns, spacing: Theme.Spacing.sm) {
-                ForEach(frames) { frame in
-                    FrameThumbnail(
-                        frame: frame,
-                        originalImage: originalImage
-                    ) {
-                        onFrameTap(frame)
-                    }
-                }
+            ForEach(frames) { frame in
+                FrameCard(
+                    frame: frame,
+                    originalImage: originalImage,
+                    project: project,
+                    onTap: { onFrameTap(frame) }
+                )
+                .environmentObject(projectStorage)
             }
         }
     }
 }
 
-// MARK: - Frame Thumbnail
-struct FrameThumbnail: View {
+// MARK: - Frame Card (with inline title editing + reflection note)
+struct FrameCard: View {
     let frame: Frame
     let originalImage: UIImage
+    let project: Project
     let onTap: () -> Void
+    @EnvironmentObject var projectStorage: ProjectStorage
 
     @State private var croppedImage: UIImage?
+    @State private var isEditingTitle = false
+    @State private var editedTitle: String = ""
+    @State private var editedNote: String = ""
+    @State private var showNote = false
+    @FocusState private var titleFocused: Bool
+    @FocusState private var noteFocused: Bool
 
     var body: some View {
-        Button(action: {
-            HapticManager.mediumImpact()
-            onTap()
-        }) {
-            Group {
-                if let cropped = croppedImage {
-                    Image(uiImage: cropped)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    Rectangle()
-                        .fill(Theme.Colors.tertiaryBackground)
-                        .overlay {
-                            Image(systemName: "photo")
-                                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+            HStack(alignment: .top, spacing: Theme.Spacing.sm) {
+                // Thumbnail
+                Button(action: {
+                    HapticManager.mediumImpact()
+                    onTap()
+                }) {
+                    Group {
+                        if let cropped = croppedImage {
+                            Image(uiImage: cropped)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        } else {
+                            Rectangle()
+                                .fill(Theme.Colors.tertiaryBackground)
+                                .overlay {
+                                    Image(systemName: "photo")
+                                        .foregroundStyle(.secondary)
+                                }
                         }
+                    }
+                    .frame(width: 80, height: 80)
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.small))
                 }
+                .buttonStyle(.plain)
+
+                // Title and info
+                VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
+                    // Editable title — tap pencil to edit
+                    if isEditingTitle {
+                        HStack(spacing: Theme.Spacing.xxs) {
+                            TextField("Frame title", text: $editedTitle)
+                                .font(Theme.Typography.headline)
+                                .focused($titleFocused)
+                                .textFieldStyle(.plain)
+                                .onSubmit { saveTitle() }
+
+                            Button {
+                                saveTitle()
+                            } label: {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    } else {
+                        Button {
+                            editedTitle = frame.title
+                            isEditingTitle = true
+                            titleFocused = true
+                            HapticManager.lightImpact()
+                        } label: {
+                            HStack(spacing: Theme.Spacing.xxs) {
+                                Text(frame.displayTitle)
+                                    .font(Theme.Typography.headline)
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    // Aspect ratio + date
+                    HStack(spacing: Theme.Spacing.xs) {
+                        Text(frame.aspectRatio.rawValue)
+                            .font(Theme.Typography.caption)
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.accentColor.opacity(0.1))
+                            .clipShape(Capsule())
+
+                        Text(frame.dateCreated, style: .date)
+                            .font(Theme.Typography.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+
+                    // Note toggle button
+                    Button {
+                        withAnimation(Theme.Animation.standard) {
+                            showNote.toggle()
+                            if showNote {
+                                editedNote = frame.note
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 2) {
+                            Image(systemName: frame.note.isEmpty ? "note.text.badge.plus" : "note.text")
+                                .font(.system(size: 11))
+
+                            Text(frame.note.isEmpty ? "Add reflection" : "Reflection")
+                                .font(Theme.Typography.caption)
+                        }
+                        .foregroundStyle(frame.note.isEmpty ? .secondary : Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Spacer()
             }
-            .frame(height: 100)
-            .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.small))
+
+            // Expanded note editor
+            if showNote {
+                VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
+                    Text("Your Reflection")
+                        .font(Theme.Typography.caption)
+                        .foregroundStyle(.secondary)
+
+                    TextEditor(text: $editedNote)
+                        .font(Theme.Typography.subheadline)
+                        .frame(minHeight: 60, maxHeight: 100)
+                        .padding(Theme.Spacing.xs)
+                        .background(Theme.Colors.tertiaryBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.small))
+                        .focused($noteFocused)
+
+                    HStack {
+                        Spacer()
+                        Button {
+                            saveNote()
+                            HapticManager.lightImpact()
+                        } label: {
+                            Text("Save")
+                                .font(Theme.Typography.caption)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, Theme.Spacing.sm)
+                                .padding(.vertical, Theme.Spacing.xxs)
+                                .background(Color.accentColor)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.leading, 80 + Theme.Spacing.sm)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
-        .buttonStyle(.plain)
+        .padding(Theme.Spacing.sm)
+        .background(Theme.Colors.secondaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.medium))
         .task {
-            // Cache the cropped image on first load
             if croppedImage == nil {
                 croppedImage = ImageProcessor.cropImage(originalImage, with: frame.cropRect)
             }
         }
+    }
+
+    private func saveTitle() {
+        var updatedProject = project
+        if let idx = updatedProject.frames.firstIndex(where: { $0.id == frame.id }) {
+            updatedProject.frames[idx].title = editedTitle
+            projectStorage.updateProject(updatedProject)
+        }
+        isEditingTitle = false
+        titleFocused = false
+        HapticManager.lightImpact()
+    }
+
+    private func saveNote() {
+        var updatedProject = project
+        if let idx = updatedProject.frames.firstIndex(where: { $0.id == frame.id }) {
+            updatedProject.frames[idx].note = editedNote
+            projectStorage.updateProject(updatedProject)
+        }
+        noteFocused = false
     }
 }
 
