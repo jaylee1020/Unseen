@@ -64,15 +64,15 @@ struct CelebrationEffect: View {
         var path = Path()
 
         for i in 0..<5 {
-            let angle = (Double(i) * 72 - 90 + rotation) * .pi / 180
-            let innerAngle = (Double(i) * 72 - 90 + 36 + rotation) * .pi / 180
+            let angle = CGFloat((Double(i) * 72 - 90 + rotation) * .pi / 180)
+            let innerAngle = CGFloat((Double(i) * 72 - 90 + 36 + rotation) * .pi / 180)
             let outerPoint = CGPoint(
-                x: center.x + radius * cos(angle),
-                y: center.y + radius * sin(angle)
+                x: center.x + radius * CoreGraphics.cos(angle),
+                y: center.y + radius * CoreGraphics.sin(angle)
             )
             let innerPoint = CGPoint(
-                x: center.x + radius * 0.4 * cos(innerAngle),
-                y: center.y + radius * 0.4 * sin(innerAngle)
+                x: center.x + radius * 0.4 * CoreGraphics.cos(innerAngle),
+                y: center.y + radius * 0.4 * CoreGraphics.sin(innerAngle)
             )
             if i == 0 {
                 path.move(to: outerPoint)
@@ -87,12 +87,12 @@ struct CelebrationEffect: View {
 
     private func spawnParticles() {
         particles = (0..<particleCount).map { _ in
-            let angle = Double.random(in: 0...(2 * .pi))
+            let angle = CGFloat.random(in: 0...(2 * .pi))
             let speed = CGFloat.random(in: 2...8)
             return Particle(
                 x: 0, y: 0, // Will be centered via overlay
-                vx: cos(angle) * speed,
-                vy: sin(angle) * speed - 3, // Upward bias
+                vx: CoreGraphics.cos(angle) * speed,
+                vy: CoreGraphics.sin(angle) * speed - 3, // Upward bias
                 scale: CGFloat.random(in: 0.5...1.5),
                 opacity: 1.0,
                 color: colors.randomElement() ?? .yellow,
