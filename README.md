@@ -1,45 +1,15 @@
-# Intent - Learn to See Before You Shoot
+# Unseen
 
-A Swift Student Challenge 2025 submission that teaches the fundamentals of intentional photography.
+Swift Student Challenge 2026용 iPad 앱 프로젝트(.swiftpm).
 
-## About
+## 개요
+Unseen은 색각이상 접근성을 위한 실시간 진단 도구입니다.
+카메라로 인쇄물/화면을 비추면 색각이상 시야 시뮬레이션, 위험 색 조합 감지, 대체 색상 제안을 제공합니다.
 
-Intent transforms how you approach mobile photography. Instead of mindlessly snapping photos, learn to see with intention — understanding composition, focal length, and creative expression.
+## 구조
+- `unseen.swiftpm/Package.swift`
+- `unseen.swiftpm/MyApp.swift`
+- `unseen.swiftpm/ContentView.swift`
 
-## Features
-
-### Learn Tab
-- **5 Interactive Chapters**: From "See First" to "Go Shoot"
-- **Hands-on Exercises**: Interactive demos for composition concepts
-- **Visual Learning**: Drag-to-tilt horizon lines, rule of thirds overlays, focal length comparisons
-
-### Try Out Tab
-- **Import Photos**: From library or camera
-- **Multi-Frame Discovery**: Find multiple compositions within a single image
-- **Smart Cropping**: Aspect ratio presets with rule of thirds grid
-- **Export**: Save cropped frames to photo library
-
-## Technical Highlights
-
-- **SwiftUI** with iOS 18+ features
-- **Liquid Glass UI** components (iOS 26 ready with fallback)
-- **Zero external dependencies**
-- **Offline-first** design
-
-## Requirements
-
-- iOS 18.0+
-- Xcode 16.0+
-- Swift 5.9+
-
-## Privacy
-
-Intent requests minimal permissions:
-- **Camera**: Optional, for taking new photos
-- **Photo Library**: Read (importing) and Add-Only (saving crops)
-
-No data leaves your device.
-
----
-
-Built with intention for Swift Student Challenge 2026.
+## 실행
+Xcode 또는 Swift Playgrounds에서 `unseen.swiftpm` 폴더를 열어 실행하세요.
