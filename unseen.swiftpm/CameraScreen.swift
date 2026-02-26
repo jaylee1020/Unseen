@@ -54,7 +54,7 @@ struct CameraScreen: View {
                 .foregroundStyle(UnseenTheme.accent)
                 .multilineTextAlignment(.center)
 
-            Text("카메라가 없으면 존재할 수 없는 앱. 실물(포스터·간판·교재·UI)을 비추면 색각이상 시야 + WCAG 대비 진단을 실시간으로 보여줍니다.")
+            Text("An app that cannot exist without a camera. Point it at real-world items — posters, signs, textbooks, UI — and get real-time color vision simulation + WCAG contrast diagnostics.")
                 .font(.callout)
                 .foregroundStyle(UnseenTheme.dim)
                 .multilineTextAlignment(.center)
@@ -73,7 +73,7 @@ struct CameraScreen: View {
     private var cameraSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("카메라 뷰파인더")
+                Text("Camera Viewfinder")
                     .font(.caption.monospaced().weight(.semibold))
                     .foregroundStyle(UnseenTheme.accent)
                 Spacer()
@@ -100,7 +100,7 @@ struct CameraScreen: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .accessibilityHidden(true)
                     } else {
-                        Text("카메라 프레임 대기 중...")
+                        Text("Waiting for camera frame...")
                             .font(.footnote)
                             .foregroundStyle(.white.opacity(0.75))
                     }
@@ -124,8 +124,8 @@ struct CameraScreen: View {
                             .frame(width: rect.width, height: rect.height)
                             .position(x: rect.midX, y: rect.midY)
                             .accessibilityElement(children: .ignore)
-                            .accessibilityLabel("\(finding.pass ? "통과" : "실패") 텍스트: \(finding.text)")
-                            .accessibilityValue("대비 \(String(format: "%.2f", finding.ratio))")
+                            .accessibilityLabel("\(finding.pass ? "Pass" : "Fail") text: \(finding.text)")
+                            .accessibilityValue("Contrast \(String(format: "%.2f", finding.ratio))")
                         }
                     }
                 }
@@ -137,8 +137,8 @@ struct CameraScreen: View {
                         }
                 )
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("실시간 카메라 진단 화면")
-                .accessibilityHint("화면을 탭하면 선택 색상 상세 분석이 열립니다.")
+                .accessibilityLabel("Live camera diagnostic view")
+                .accessibilityHint("Tap to inspect color details.")
             }
             .frame(height: 300)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -147,7 +147,7 @@ struct CameraScreen: View {
                     .stroke(UnseenTheme.border, lineWidth: 1)
             }
 
-            Text("화면을 탭하면 색상 상세/대체 색상이 뜹니다.")
+            Text("Tap the view to inspect color details and alternatives.")
                 .font(.footnote)
                 .foregroundStyle(UnseenTheme.dim)
 
@@ -155,16 +155,16 @@ struct CameraScreen: View {
                 Capsule()
                     .fill(UnseenTheme.border)
                     .frame(width: 34, height: 4)
-                Text("위로 스와이프하면 교육 카드")
+                Text("Swipe up for education cards")
                     .font(.caption)
                     .foregroundStyle(UnseenTheme.dim)
                 Spacer()
-                Button("열기") {
+                Button("Open") {
                     showEducationSheet = true
                 }
                 .font(.caption.monospaced().weight(.semibold))
                 .foregroundStyle(UnseenTheme.accent)
-                .accessibilityLabel("교육 카드 열기")
+                .accessibilityLabel("Open education cards")
             }
             .contentShape(Rectangle())
             .gesture(
@@ -181,64 +181,64 @@ struct CameraScreen: View {
 
     private var controlsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("실시간 진단 설정")
+            Text("Live Diagnostic Settings")
                 .font(.caption.monospaced().weight(.semibold))
                 .foregroundStyle(UnseenTheme.accent)
 
-            Picker("색각 모드", selection: $vm.mode) {
+            Picker("Vision Mode", selection: $vm.mode) {
                 ForEach(VisionMode.allCases) { mode in
                     Text(mode.shortLabel).tag(mode)
                 }
             }
             .pickerStyle(.segmented)
-            .accessibilityLabel("색각 모드 선택")
-            .accessibilityHint("정상, 적-녹, 적색약, 청색약 모드를 전환합니다.")
+            .accessibilityLabel("Vision mode selector")
+            .accessibilityHint("Switch between Normal, Red-Green, Protanopia, and Tritanopia modes.")
 
-            Toggle("텍스트 인식 + WCAG 대비 분석", isOn: $vm.analyzeText)
+            Toggle("Text Recognition + WCAG Contrast Analysis", isOn: $vm.analyzeText)
                 .tint(UnseenTheme.accent)
-                .accessibilityLabel("텍스트 인식 및 대비 분석")
+                .accessibilityLabel("Text recognition and contrast analysis")
 
             Button {
                 vm.isFrozen.toggle()
                 if vm.isFrozen {
-                    vm.statusText = "프레임 고정됨"
+                    vm.statusText = "Frame frozen"
                 } else {
-                    vm.statusText = vm.useSampleFallback ? "샘플 모드" : "실시간 카메라 분석 중"
+                    vm.statusText = vm.useSampleFallback ? "Sample mode" : "Live camera analysis"
                 }
             } label: {
-                Label(vm.isFrozen ? "분석 재개" : "프레임 고정", systemImage: vm.isFrozen ? "play.fill" : "pause.fill")
+                Label(vm.isFrozen ? "Resume Analysis" : "Freeze Frame", systemImage: vm.isFrozen ? "play.fill" : "pause.fill")
                     .font(.subheadline.weight(.semibold))
             }
             .buttonStyle(.bordered)
             .tint(UnseenTheme.accent)
-            .accessibilityHint("고정된 프레임으로 진단을 확인할 수 있습니다.")
+            .accessibilityHint("Freeze the current frame for detailed inspection.")
 
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(vm.statusText)
                     .font(.footnote)
                     .foregroundStyle(UnseenTheme.dim)
-                    .accessibilityLabel("상태")
+                    .accessibilityLabel("Status")
                     .accessibilityValue(vm.statusText)
 
                 Spacer()
 
-                Button("샘플 모드") {
-                    vm.activateSampleFallback(reason: "샘플 모드 수동 전환")
+                Button("Sample Mode") {
+                    vm.activateSampleFallback(reason: "Sample mode (manual)")
                 }
                 .font(.caption.monospaced().weight(.semibold))
                 .foregroundStyle(UnseenTheme.blue)
-                .accessibilityHint("카메라 없이 데모 화면으로 전환합니다.")
+                .accessibilityHint("Switch to demo view without camera.")
             }
 
             if vm.permissionDenied {
-                Button("설정에서 카메라 권한 열기") {
+                Button("Open Camera Permission in Settings") {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
                     }
                 }
                 .font(.subheadline.weight(.semibold))
                 .padding(.top, 2)
-                .accessibilityHint("iPad 설정 앱에서 카메라 권한을 변경합니다.")
+                .accessibilityHint("Opens Settings to change camera permission.")
             }
         }
         .unseenCard()
@@ -246,12 +246,12 @@ struct CameraScreen: View {
 
     private var findingsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("진단 결과")
+            Text("Diagnostic Results")
                 .font(.caption.monospaced().weight(.semibold))
                 .foregroundStyle(UnseenTheme.accent)
 
             if vm.findings.isEmpty {
-                Text("텍스트를 인식하면 PASS/FAIL 결과가 여기에 표시됩니다.")
+                Text("PASS/FAIL results will appear here when text is recognized.")
                     .font(.footnote)
                     .foregroundStyle(UnseenTheme.dim)
             } else {
@@ -269,7 +269,7 @@ struct CameraScreen: View {
                         .padding(.vertical, 4)
                         .background(failCount == 0 ? UnseenTheme.green : UnseenTheme.red)
                         .clipShape(Capsule())
-                        .accessibilityLabel(failCount == 0 ? "전체 통과" : "실패 \(failCount)개")
+                        .accessibilityLabel(failCount == 0 ? "All passed" : "\(failCount) failed")
 
                     Text("worst \(String(format: "%.2f", displayRatio))")
                         .font(.caption.monospaced().weight(.semibold))
@@ -314,8 +314,8 @@ struct CameraScreen: View {
                     .background(UnseenTheme.surface2)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("텍스트 \(finding.text)")
-                    .accessibilityValue("\(finding.pass ? "통과" : "실패"), 대비 \(String(format: "%.2f", finding.ratio))")
+                    .accessibilityLabel("Text: \(finding.text)")
+                    .accessibilityValue("\(finding.pass ? "Pass" : "Fail"), contrast \(String(format: "%.2f", finding.ratio))")
                 }
             }
         }
@@ -328,19 +328,19 @@ struct CameraScreen: View {
                 .font(.caption.monospaced().weight(.semibold))
                 .foregroundStyle(UnseenTheme.accent)
 
-            Text("카메라가 없으면 존재할 수 없는 앱")
+            Text("An app that cannot exist without a camera")
                 .font(.system(.title2, design: .serif, weight: .regular))
                 .foregroundStyle(UnseenTheme.text)
 
-            Text("실물(포스터·간판·출력물)을 비추는 즉시 진단해야 하므로 웹 문서/포토샵 필터로 대체할 수 없습니다. 디자이너·교사가 반복적으로 사용하는 검수 도구라는 점이 핵심입니다.")
+            Text("Real-world items need instant diagnosis on the spot — web tools or Photoshop filters can't replace that. The key value is a repeatable inspection tool for designers and educators.")
                 .font(.callout)
                 .foregroundStyle(UnseenTheme.dim)
                 .lineSpacing(2)
 
             HStack(spacing: 10) {
-                SmallCard(title: "실물 검사", body: "디지털 파일이 아닌 현실 세계 접근성 진단")
-                SmallCard(title: "실시간", body: "비추는 즉시 결과")
-                SmallCard(title: "반복 사용", body: "디자인 검수 루틴화")
+                SmallCard(title: "Real-World", content: "Diagnose physical accessibility, not just digital files")
+                SmallCard(title: "Real-Time", content: "Instant results as you point")
+                SmallCard(title: "Repeatable", content: "Build accessibility checks into your routine")
             }
         }
         .unseenCard()
@@ -352,24 +352,24 @@ struct CameraScreen: View {
                 .font(.caption.monospaced().weight(.semibold))
                 .foregroundStyle(UnseenTheme.accent)
 
-            DemoStep(time: "0:00-0:15", title: "앱 오픈", detail: "한 줄 설명 후 즉시 카메라 진입")
-            DemoStep(time: "0:15-0:50", title: "색각이상 시뮬레이션", detail: "토글 전환으로 빨강-초록 충돌 체감")
-            DemoStep(time: "0:50-1:40", title: "PASS/FAIL 진단", detail: "텍스트 자동 인식 + WCAG 대비 계산")
-            DemoStep(time: "1:40-2:20", title: "탭 상세 분석", detail: "HEX/RGB + 모드별 변환 + 대체 색 제안")
-            DemoStep(time: "2:20-3:00", title: "반복 사용 가치", detail: "디자인 검수 도구로 실제 워크플로우 연결")
+            DemoStep(time: "0:00-0:15", title: "App Launch", detail: "One-line intro, then straight to camera")
+            DemoStep(time: "0:15-0:50", title: "CVD Simulation", detail: "Toggle modes to experience red-green conflict")
+            DemoStep(time: "0:50-1:40", title: "PASS/FAIL Diagnosis", detail: "Auto text recognition + WCAG contrast check")
+            DemoStep(time: "1:40-2:20", title: "Tap Detail Analysis", detail: "HEX/RGB + per-mode conversion + alternative colors")
+            DemoStep(time: "2:20-3:00", title: "Repeatable Value", detail: "Connect to real design review workflows")
         }
         .unseenCard()
     }
 
     private var educationCardsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("quick education cards")
+            Text("Quick Education Cards")
                 .font(.caption.monospaced().weight(.semibold))
                 .foregroundStyle(UnseenTheme.accent)
 
-            EducationCard(title: "색에만 의존하지 않기", body: "정답/오답, 상태값 전달 시 색 + 아이콘 + 텍스트를 함께 사용하세요.")
-            EducationCard(title: "WCAG 대비 기준", body: "일반 텍스트는 4.5:1 이상, 큰 텍스트는 3:1 이상을 권장합니다.")
-            EducationCard(title: "실기기 검수", body: "인쇄물/프로젝터/실내 조명 환경에서 최종 점검해야 실제 가독성을 보장할 수 있습니다.")
+            EducationCard(title: "Don't rely on color alone", content: "Use icons and text alongside color to convey status like pass/fail.")
+            EducationCard(title: "WCAG Contrast Baseline", content: "Normal text requires 4.5:1 ratio; large text requires 3:1 minimum.")
+            EducationCard(title: "Test on real devices", content: "Always do a final check under real lighting, distance, and print conditions.")
         }
         .unseenCard()
     }
@@ -377,7 +377,7 @@ struct CameraScreen: View {
 
 private struct SmallCard: View {
     let title: String
-    let body: String
+    let content: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -385,7 +385,7 @@ private struct SmallCard: View {
                 .font(.caption.weight(.bold))
                 .foregroundStyle(UnseenTheme.text)
                 .lineLimit(2)
-            Text(body)
+            Text(content)
                 .font(.caption)
                 .foregroundStyle(UnseenTheme.dim)
                 .lineSpacing(2)
@@ -429,14 +429,14 @@ private struct DemoStep: View {
 
 struct EducationCard: View {
     let title: String
-    let body: String
+    let content: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(UnseenTheme.text)
-            Text(body)
+            Text(content)
                 .font(.caption)
                 .foregroundStyle(UnseenTheme.dim)
                 .lineSpacing(2)

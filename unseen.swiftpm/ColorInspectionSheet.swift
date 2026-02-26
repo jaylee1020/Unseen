@@ -9,7 +9,7 @@ struct ColorInspectionSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("선택 색상")
+                        Text("Selected Color")
                             .font(.caption.monospaced().weight(.semibold))
                             .foregroundStyle(UnseenTheme.accent)
 
@@ -36,7 +36,7 @@ struct ColorInspectionSheet: View {
                     Divider().overlay(UnseenTheme.border)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("모드별 변환")
+                        Text("Per-Mode Transform")
                             .font(.caption.monospaced().weight(.semibold))
                             .foregroundStyle(UnseenTheme.accent)
 
@@ -51,7 +51,7 @@ struct ColorInspectionSheet: View {
                             }
                             .padding(.vertical, 4)
                             .accessibilityElement(children: .combine)
-                            .accessibilityLabel("\(mode.rawValue) 모드 색상")
+                            .accessibilityLabel("\(mode.rawValue) mode color")
                             .accessibilityValue(hex)
                         }
                     }
@@ -59,7 +59,7 @@ struct ColorInspectionSheet: View {
                     Divider().overlay(UnseenTheme.border)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("권장 대체 색상")
+                        Text("Suggested Alternatives")
                             .font(.caption.monospaced().weight(.semibold))
                             .foregroundStyle(UnseenTheme.accent)
 
@@ -85,7 +85,7 @@ struct ColorInspectionSheet: View {
                             }
                             .padding(.vertical, 2)
                             .accessibilityElement(children: .combine)
-                            .accessibilityLabel("\(suggestion.role) 추천 색상")
+                            .accessibilityLabel("\(suggestion.role) suggested color")
                             .accessibilityValue(suggestion.hex)
                         }
                     }
@@ -93,12 +93,12 @@ struct ColorInspectionSheet: View {
                 .padding(20)
             }
             .background(UnseenTheme.bg.ignoresSafeArea())
-            .navigationTitle("색상 상세 분석")
+            .navigationTitle("Color Detail")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("닫기") { dismiss() }
-                        .accessibilityLabel("색상 상세 분석 닫기")
+                    Button("Close") { dismiss() }
+                        .accessibilityLabel("Close color detail")
                 }
             }
         }

@@ -10,7 +10,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
     @Published var findings: [ContrastFinding] = []
     @Published var mode: VisionMode = .deuteranopia {
         didSet {
-            statusText = "모드: \(mode.rawValue)"
+            statusText = "Mode: \(mode.rawValue)"
             if useSampleFallback {
                 renderSampleFrame()
             }
@@ -23,7 +23,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
             }
         }
     }
-    @Published var statusText: String = "카메라 준비 중..."
+    @Published var statusText: String = "Preparing camera..."
     @Published var permissionDenied = false
     @Published var useSampleFallback = false
     @Published var isFrozen = false
@@ -70,13 +70,13 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
                         self.configureAndRunSessionIfNeeded()
                     } else {
                         self.permissionDenied = true
-                        self.activateSampleFallback(reason: "카메라 권한 없음 — 샘플 모드")
+                        self.activateSampleFallback(reason: "No camera permission — Sample mode")
                     }
                 }
             }
         default:
             permissionDenied = true
-            activateSampleFallback(reason: "카메라 접근 제한 — 샘플 모드")
+            activateSampleFallback(reason: "Camera access restricted — Sample mode")
         }
     }
 
@@ -86,7 +86,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
         }
     }
 
-    func activateSampleFallback(reason: String = "샘플 모드") {
+    func activateSampleFallback(reason: String = "Sample mode") {
         useSampleFallback = true
         statusText = reason
         renderSampleFrame()
@@ -151,7 +151,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
 
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
             session.commitConfiguration()
-            activateSampleFallback(reason: "카메라 장치 없음 — 샘플 모드")
+            activateSampleFallback(reason: "No camera device — Sample mode")
             return
         }
 
@@ -162,7 +162,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
             }
         } catch {
             session.commitConfiguration()
-            activateSampleFallback(reason: "카메라 초기화 실패 — 샘플 모드")
+            activateSampleFallback(reason: "Camera init failed — Sample mode")
             return
         }
 
@@ -179,7 +179,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
         session.commitConfiguration()
         configured = true
         useSampleFallback = false
-        statusText = "실시간 카메라 분석 중"
+        statusText = "Live camera analysis"
 
         processingQueue.async { [weak self] in
             self?.session.startRunning()
@@ -235,15 +235,15 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
                 .font: UIFont.boldSystemFont(ofSize: 44),
                 .foregroundColor: UIColor.white
             ]
-            NSString(string: "오답").draw(at: CGPoint(x: 280, y: 283), withAttributes: textAttrs)
-            NSString(string: "정답").draw(at: CGPoint(x: 740, y: 283), withAttributes: textAttrs)
+            NSString(string: "Wrong").draw(at: CGPoint(x: 260, y: 283), withAttributes: textAttrs)
+            NSString(string: "Correct").draw(at: CGPoint(x: 710, y: 283), withAttributes: textAttrs)
 
             let bodyAttrs: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: 34, weight: .medium),
                 .foregroundColor: UIColor(white: 0.88, alpha: 1)
             ]
-            NSString(string: "공지: 2월 28일 제출 마감").draw(at: CGPoint(x: 120, y: 430), withAttributes: bodyAttrs)
-            NSString(string: "접근성 대비 확인 필요").draw(at: CGPoint(x: 120, y: 485), withAttributes: bodyAttrs)
+            NSString(string: "Notice: Deadline Feb 28").draw(at: CGPoint(x: 120, y: 430), withAttributes: bodyAttrs)
+            NSString(string: "Accessibility contrast check needed").draw(at: CGPoint(x: 120, y: 485), withAttributes: bodyAttrs)
         }
 
         return CIImage(image: image)
@@ -274,7 +274,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
             let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
             try handler.perform([request])
 
-            let observations = (request.results as? [VNRecognizedTextObservation]) ?? []
+            let observations = request.results ?? []
             let trimmed = observations.prefix(AnalysisConstants.maxFindings)
 
             let output: [ContrastFinding] = trimmed.compactMap { obs in
@@ -296,16 +296,16 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
 
                 self.findings = output.sorted(by: { $0.ratio < $1.ratio })
                 if let firstFail = self.findings.first(where: { !$0.pass }) {
-                    self.statusText = "\(self.mode.rawValue) · FAIL \(String(format: "%.2f", firstFail.ratio)) 발견"
+                    self.statusText = "\(self.mode.rawValue) · FAIL \(String(format: "%.2f", firstFail.ratio)) found"
                 } else if self.findings.isEmpty {
-                    self.statusText = "텍스트를 인식하지 못했습니다"
+                    self.statusText = "No text detected"
                 } else {
-                    self.statusText = "\(self.mode.rawValue) · 모든 텍스트 PASS"
+                    self.statusText = "\(self.mode.rawValue) · All text PASS"
                 }
             }
         } catch {
             DispatchQueue.main.async { [weak self] in
-                self?.statusText = "텍스트 분석 오류: \(error.localizedDescription)"
+                self?.statusText = "Text analysis error: \(error.localizedDescription)"
             }
         }
     }
@@ -316,27 +316,27 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
         switch mode {
         case .deuteranopia, .protanopia:
             return [
-                ColorSuggestion(role: "오답/주의", hex: "#D26A00"),
-                ColorSuggestion(role: "정답/완료", hex: "#2F6EE2"),
-                ColorSuggestion(role: "보조", hex: "#6C7280")
+                ColorSuggestion(role: "Error/Warning", hex: "#D26A00"),
+                ColorSuggestion(role: "Success/Done", hex: "#2F6EE2"),
+                ColorSuggestion(role: "Secondary", hex: "#6C7280")
             ]
         case .tritanopia:
             return [
-                ColorSuggestion(role: "강조 A", hex: "#BD5A4F"),
-                ColorSuggestion(role: "강조 B", hex: "#2A6FB2"),
-                ColorSuggestion(role: "보조", hex: "#57606D")
+                ColorSuggestion(role: "Accent A", hex: "#BD5A4F"),
+                ColorSuggestion(role: "Accent B", hex: "#2A6FB2"),
+                ColorSuggestion(role: "Secondary", hex: "#57606D")
             ]
         case .normal:
             let luminance = contrastAnalyzer.relativeLuminance(color)
             if luminance < 0.4 {
                 return [
-                    ColorSuggestion(role: "대비용 밝은 텍스트", hex: "#F5F7FA"),
-                    ColorSuggestion(role: "강조", hex: "#C44100")
+                    ColorSuggestion(role: "Light text for contrast", hex: "#F5F7FA"),
+                    ColorSuggestion(role: "Accent", hex: "#C44100")
                 ]
             } else {
                 return [
-                    ColorSuggestion(role: "대비용 어두운 텍스트", hex: "#1A1A1A"),
-                    ColorSuggestion(role: "보조", hex: "#1D5FA0")
+                    ColorSuggestion(role: "Dark text for contrast", hex: "#1A1A1A"),
+                    ColorSuggestion(role: "Secondary", hex: "#1D5FA0")
                 ]
             }
         }

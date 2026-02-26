@@ -11,10 +11,10 @@ enum VisionMode: String, CaseIterable, Identifiable {
 
     var shortLabel: String {
         switch self {
-        case .normal: return "정상"
-        case .deuteranopia: return "적-녹"
-        case .protanopia: return "적색약"
-        case .tritanopia: return "청색약"
+        case .normal: return "Normal"
+        case .deuteranopia: return "Red-Green"
+        case .protanopia: return "Red-Weak"
+        case .tritanopia: return "Blue-Weak"
         }
     }
 }

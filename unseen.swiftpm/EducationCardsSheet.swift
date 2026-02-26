@@ -7,25 +7,25 @@ struct EducationCardsSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("디자이너를 위한 접근성 카드")
+                    Text("Accessibility Cards for Designers")
                         .font(.system(.title2, design: .serif, weight: .regular))
                         .foregroundStyle(UnseenTheme.text)
 
-                    EducationCard(title: "규칙 1", body: "색만으로 상태를 전달하지 말고 아이콘·텍스트를 함께 사용하세요.")
-                    EducationCard(title: "규칙 2", body: "일반 텍스트 대비 4.5:1 이상(큰 텍스트 3:1 이상)을 기본으로 점검하세요.")
-                    EducationCard(title: "규칙 3", body: "초록/빨강 쌍은 대체 색상(주황/파랑) 조합을 우선 고려하세요.")
-                    EducationCard(title: "규칙 4", body: "실기기 조명/거리 환경에서 마지막 검수를 반드시 수행하세요.")
-                    EducationCard(title: "규칙 5", body: "최종 제출물에는 접근성 검수 과정을 명시해 신뢰도를 높이세요.")
+                    EducationCard(title: "Rule 1", content: "Don't rely on color alone — always pair with icons or text.")
+                    EducationCard(title: "Rule 2", content: "Check contrast: 4.5:1 minimum for normal text, 3:1 for large text.")
+                    EducationCard(title: "Rule 3", content: "Avoid green/red pairs — prefer orange/blue alternatives.")
+                    EducationCard(title: "Rule 4", content: "Always do a final review on real devices under various lighting.")
+                    EducationCard(title: "Rule 5", content: "Document your accessibility review process in deliverables.")
                 }
                 .padding(20)
             }
             .background(UnseenTheme.bg.ignoresSafeArea())
-            .navigationTitle("교육 카드")
+            .navigationTitle("Education Cards")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("닫기") { dismiss() }
-                        .accessibilityLabel("교육 카드 닫기")
+                    Button("Close") { dismiss() }
+                        .accessibilityLabel("Close education cards")
                 }
             }
         }
