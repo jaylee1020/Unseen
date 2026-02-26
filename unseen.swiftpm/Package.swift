@@ -27,7 +27,8 @@ let package = Package(
                 .landscapeRight,
                 .portraitUpsideDown(.when(deviceFamilies: [.pad]))
             ],
-            appCategory: .education
+            appCategory: .education,
+            additionalInfoPlistContentFilePath: "Supporting/Info.plist"
         )
     ],
     targets: [
