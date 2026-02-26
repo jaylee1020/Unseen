@@ -1,5 +1,24 @@
 import SwiftUI
 
+struct UnseenCardStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(16)
+            .background(UnseenTheme.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(UnseenTheme.border, lineWidth: 1)
+            }
+    }
+}
+
+extension View {
+    func unseenCard() -> some View {
+        modifier(UnseenCardStyle())
+    }
+}
+
 enum UnseenTheme {
     static let bg = Color(red: 250.0 / 255.0, green: 250.0 / 255.0, blue: 248.0 / 255.0)
     static let surface = Color.white

@@ -176,13 +176,7 @@ struct CameraScreen: View {
                     }
             )
         }
-        .padding(16)
-        .background(UnseenTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(UnseenTheme.border, lineWidth: 1)
-        }
+        .unseenCard()
     }
 
     private var controlsSection: some View {
@@ -247,13 +241,7 @@ struct CameraScreen: View {
                 .accessibilityHint("iPad 설정 앱에서 카메라 권한을 변경합니다.")
             }
         }
-        .padding(16)
-        .background(UnseenTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(UnseenTheme.border, lineWidth: 1)
-        }
+        .unseenCard()
     }
 
     private var findingsSection: some View {
@@ -267,8 +255,11 @@ struct CameraScreen: View {
                     .font(.footnote)
                     .foregroundStyle(UnseenTheme.dim)
             } else {
-                let failCount = vm.findings.filter { !$0.pass }.count
-                let worstRatio = vm.findings.map(\.ratio).min() ?? 0
+                let (failCount, worstRatio) = vm.findings.reduce(into: (0, Double.infinity)) { result, f in
+                    if !f.pass { result.0 += 1 }
+                    result.1 = min(result.1, f.ratio)
+                }
+                let displayRatio = worstRatio == .infinity ? 0.0 : worstRatio
 
                 HStack(spacing: 8) {
                     Text(failCount == 0 ? "ALL PASS" : "FAIL \(failCount)")
@@ -280,7 +271,7 @@ struct CameraScreen: View {
                         .clipShape(Capsule())
                         .accessibilityLabel(failCount == 0 ? "전체 통과" : "실패 \(failCount)개")
 
-                    Text("worst \(String(format: "%.2f", worstRatio))")
+                    Text("worst \(String(format: "%.2f", displayRatio))")
                         .font(.caption.monospaced().weight(.semibold))
                         .foregroundStyle(UnseenTheme.dim)
 
@@ -328,13 +319,7 @@ struct CameraScreen: View {
                 }
             }
         }
-        .padding(16)
-        .background(UnseenTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(UnseenTheme.border, lineWidth: 1)
-        }
+        .unseenCard()
     }
 
     private var whyAppSection: some View {
@@ -358,13 +343,7 @@ struct CameraScreen: View {
                 SmallCard(title: "반복 사용", body: "디자인 검수 루틴화")
             }
         }
-        .padding(16)
-        .background(UnseenTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(UnseenTheme.border, lineWidth: 1)
-        }
+        .unseenCard()
     }
 
     private var demoFlowSection: some View {
@@ -379,13 +358,7 @@ struct CameraScreen: View {
             DemoStep(time: "1:40-2:20", title: "탭 상세 분석", detail: "HEX/RGB + 모드별 변환 + 대체 색 제안")
             DemoStep(time: "2:20-3:00", title: "반복 사용 가치", detail: "디자인 검수 도구로 실제 워크플로우 연결")
         }
-        .padding(16)
-        .background(UnseenTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(UnseenTheme.border, lineWidth: 1)
-        }
+        .unseenCard()
     }
 
     private var educationCardsSection: some View {
@@ -398,13 +371,7 @@ struct CameraScreen: View {
             EducationCard(title: "WCAG 대비 기준", body: "일반 텍스트는 4.5:1 이상, 큰 텍스트는 3:1 이상을 권장합니다.")
             EducationCard(title: "실기기 검수", body: "인쇄물/프로젝터/실내 조명 환경에서 최종 점검해야 실제 가독성을 보장할 수 있습니다.")
         }
-        .padding(16)
-        .background(UnseenTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(UnseenTheme.border, lineWidth: 1)
-        }
+        .unseenCard()
     }
 }
 

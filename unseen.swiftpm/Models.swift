@@ -43,6 +43,25 @@ struct ColorInspection: Identifiable {
     let suggestions: [ColorSuggestion]
 }
 
+extension SIMD3 where Scalar == Double {
+    var rgb255: (r: Int, g: Int, b: Int) {
+        (
+            Int(max(0, min(255, (x * 255).rounded()))),
+            Int(max(0, min(255, (y * 255).rounded()))),
+            Int(max(0, min(255, (z * 255).rounded()))))
+    }
+
+    var hexString: String {
+        let c = rgb255
+        return String(format: "#%02X%02X%02X", c.r, c.g, c.b)
+    }
+
+    var rgbString: String {
+        let c = rgb255
+        return "\(c.r), \(c.g), \(c.b)"
+    }
+}
+
 enum AnalysisConstants {
     static let ocrFrameInterval = 10
     static let maxFindings = 12

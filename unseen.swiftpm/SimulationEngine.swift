@@ -59,15 +59,3 @@ final class CISimulationEngine: SimulationEngine {
         }
     }
 }
-
-final class MetalSimulationEngine: SimulationEngine {
-    private let fallback = CISimulationEngine()
-
-    func simulate(_ image: CIImage, mode: VisionMode) -> CIImage {
-        fallback.simulate(image, mode: mode)
-    }
-
-    func transformColor(_ color: SIMD3<Double>, mode: VisionMode) -> SIMD3<Double> {
-        fallback.transformColor(color, mode: mode)
-    }
-}

@@ -1,5 +1,4 @@
 import AVFoundation
-import CoreHaptics
 import CoreImage
 import CoreImage.CIFilterBuiltins
 import UIKit
@@ -31,6 +30,9 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
     @Published var inspection: ColorInspection?
 
     private let simulationEngine: SimulationEngine
+    private let contrastAnalyzer: ContrastAnalyzer
+    private let haptics = HapticService()
+
     private let session = AVCaptureSession()
     private let output = AVCaptureVideoDataOutput()
     private let processingQueue = DispatchQueue(label: "unseen.camera.processing", qos: .userInitiated)
@@ -39,20 +41,22 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
     private let context = CIContext(options: nil)
 
     private var configured = false
+    /// Accessed only on `processingQueue` — no additional synchronization needed.
     private var frameCounter = 0
     private var lastCIImage: CIImage?
-    private var hapticEngine: CHHapticEngine?
     private var isAnalyzingFrame = false
 
     init(simulationEngine: SimulationEngine = CISimulationEngine()) {
         self.simulationEngine = simulationEngine
+        self.contrastAnalyzer = ContrastAnalyzer(context: CIContext(options: nil))
         super.init()
-        prepareHaptics()
     }
 
     deinit {
         stop()
     }
+
+    // MARK: - Public API
 
     func start() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -94,7 +98,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
         guard let imagePoint = mapViewPointToImagePoint(location, viewSize: viewSize, imageSize: imgSize) else { return }
 
         if let tappedFinding = finding(at: location, in: viewSize), !tappedFinding.pass {
-            triggerFailHaptic()
+            haptics.triggerFail()
         }
 
         let sampleHalf = AnalysisConstants.tapSampleSize / 2
@@ -104,23 +108,17 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
             width: AnalysisConstants.tapSampleSize,
             height: AnalysisConstants.tapSampleSize
         )
-        guard let sampled = averageColor(in: image, rect: sampleRect) else { return }
+        guard let sampled = contrastAnalyzer.averageColor(in: image, rect: sampleRect) else { return }
 
-        let pickedHex = hexString(sampled)
-        let pickedRGB = rgbString(sampled)
-
-        var modeSamples: [(VisionMode, String)] = []
-        for mode in VisionMode.allCases {
-            let transformed = simulationEngine.transformColor(sampled, mode: mode)
-            modeSamples.append((mode, hexString(transformed)))
+        let modeSamples: [(VisionMode, String)] = VisionMode.allCases.map { mode in
+            (mode, simulationEngine.transformColor(sampled, mode: mode).hexString)
         }
 
-        let suggestions = suggestedAlternatives(for: sampled, mode: mode)
         inspection = ColorInspection(
-            pickedHex: pickedHex,
-            pickedRGB: pickedRGB,
+            pickedHex: sampled.hexString,
+            pickedRGB: sampled.rgbString,
             modeSamples: modeSamples,
-            suggestions: suggestions
+            suggestions: suggestedAlternatives(for: sampled, mode: mode)
         )
     }
 
@@ -138,11 +136,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
         return CGRect(x: x, y: y, width: width, height: height)
     }
 
-    private func finding(at point: CGPoint, in viewSize: CGSize) -> ContrastFinding? {
-        findings.first { finding in
-            overlayRect(for: finding.normalizedBox, in: viewSize).contains(point)
-        }
-    }
+    // MARK: - Camera Session
 
     private func configureAndRunSessionIfNeeded() {
         guard !configured else {
@@ -191,6 +185,8 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
             self?.session.startRunning()
         }
     }
+
+    // MARK: - Frame Processing
 
     private func renderSampleFrame() {
         guard let sampleImage = generateSampleCIImage() else { return }
@@ -263,6 +259,8 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
         }
     }
 
+    // MARK: - Text Analysis
+
     private func runTextAnalysis(cgImage: CGImage, sourceImage: CIImage) {
         defer { releaseAnalysisSlot() }
 
@@ -281,7 +279,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
 
             let output: [ContrastFinding] = trimmed.compactMap { obs in
                 guard let candidate = obs.topCandidates(1).first else { return nil }
-                guard let estimate = estimateContrast(for: obs.boundingBox, in: sourceImage) else { return nil }
+                guard let estimate = contrastAnalyzer.estimateContrast(for: obs.boundingBox, in: sourceImage) else { return nil }
 
                 return ContrastFinding(
                     text: candidate.string,
@@ -294,8 +292,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
             }
 
             DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
-                guard self.analyzeText else { return }
+                guard let self, self.analyzeText else { return }
 
                 self.findings = output.sorted(by: { $0.ratio < $1.ratio })
                 if let firstFail = self.findings.first(where: { !$0.pass }) {
@@ -308,90 +305,12 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
             }
         } catch {
             DispatchQueue.main.async { [weak self] in
-                self?.statusText = "텍스트 분석 오류"
+                self?.statusText = "텍스트 분석 오류: \(error.localizedDescription)"
             }
         }
     }
 
-    private func estimateContrast(for normalizedBox: CGRect, in image: CIImage) -> (ratio: Double, foregroundHex: String, backgroundHex: String)? {
-        let imgRect = CGRect(
-            x: normalizedBox.minX * image.extent.width,
-            y: normalizedBox.minY * image.extent.height,
-            width: normalizedBox.width * image.extent.width,
-            height: normalizedBox.height * image.extent.height
-        )
-        guard !imgRect.isEmpty else { return nil }
-
-        let fgRect = imgRect.insetBy(
-            dx: max(1, imgRect.width * AnalysisConstants.fgInsetXRatio),
-            dy: max(1, imgRect.height * AnalysisConstants.fgInsetYRatio)
-        )
-        let bgRect = imgRect.insetBy(
-            dx: -max(4, imgRect.width * AnalysisConstants.bgInsetXRatio),
-            dy: -max(4, imgRect.height * AnalysisConstants.bgInsetYRatio)
-        )
-
-        guard let fg = averageColor(in: image, rect: fgRect),
-              let bg = averageColor(in: image, rect: bgRect) else { return nil }
-
-        let ratio = contrastRatio(fg, bg)
-        return (ratio, hexString(fg), hexString(bg))
-    }
-
-    private func averageColor(in image: CIImage, rect: CGRect) -> SIMD3<Double>? {
-        let safeRect = rect.intersection(image.extent)
-        guard !safeRect.isEmpty else { return nil }
-
-        let filter = CIFilter.areaAverage()
-        filter.inputImage = image.cropped(to: safeRect)
-        filter.extent = safeRect
-
-        guard let output = filter.outputImage else { return nil }
-
-        var bitmap = [UInt8](repeating: 0, count: 4)
-        context.render(
-            output,
-            toBitmap: &bitmap,
-            rowBytes: 4,
-            bounds: CGRect(x: 0, y: 0, width: 1, height: 1),
-            format: .RGBA8,
-            colorSpace: CGColorSpaceCreateDeviceRGB()
-        )
-
-        return SIMD3(
-            Double(bitmap[0]) / 255.0,
-            Double(bitmap[1]) / 255.0,
-            Double(bitmap[2]) / 255.0
-        )
-    }
-
-    private func contrastRatio(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Double {
-        let l1 = relativeLuminance(a)
-        let l2 = relativeLuminance(b)
-        return (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
-    }
-
-    private func relativeLuminance(_ c: SIMD3<Double>) -> Double {
-        func f(_ v: Double) -> Double {
-            if v <= 0.03928 { return v / 12.92 }
-            return pow((v + 0.055) / 1.055, 2.4)
-        }
-        return 0.2126 * f(c.x) + 0.7152 * f(c.y) + 0.0722 * f(c.z)
-    }
-
-    private func hexString(_ c: SIMD3<Double>) -> String {
-        let r = Int(max(0, min(255, round(c.x * 255.0))))
-        let g = Int(max(0, min(255, round(c.y * 255.0))))
-        let b = Int(max(0, min(255, round(c.z * 255.0))))
-        return String(format: "#%02X%02X%02X", r, g, b)
-    }
-
-    private func rgbString(_ c: SIMD3<Double>) -> String {
-        let r = Int(max(0, min(255, round(c.x * 255.0))))
-        let g = Int(max(0, min(255, round(c.y * 255.0))))
-        let b = Int(max(0, min(255, round(c.z * 255.0))))
-        return "\(r), \(g), \(b)"
-    }
+    // MARK: - Color Suggestions
 
     private func suggestedAlternatives(for color: SIMD3<Double>, mode: VisionMode) -> [ColorSuggestion] {
         switch mode {
@@ -408,7 +327,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
                 ColorSuggestion(role: "보조", hex: "#57606D")
             ]
         case .normal:
-            let luminance = relativeLuminance(color)
+            let luminance = contrastAnalyzer.relativeLuminance(color)
             if luminance < 0.4 {
                 return [
                     ColorSuggestion(role: "대비용 밝은 텍스트", hex: "#F5F7FA"),
@@ -420,6 +339,14 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
                     ColorSuggestion(role: "보조", hex: "#1D5FA0")
                 ]
             }
+        }
+    }
+
+    // MARK: - Coordinate Mapping
+
+    private func finding(at point: CGPoint, in viewSize: CGSize) -> ContrastFinding? {
+        findings.first { finding in
+            overlayRect(for: finding.normalizedBox, in: viewSize).contains(point)
         }
     }
 
@@ -450,31 +377,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
         }
     }
 
-    private func prepareHaptics() {
-        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
-        do {
-            hapticEngine = try CHHapticEngine()
-            try hapticEngine?.start()
-        } catch {
-            hapticEngine = nil
-        }
-    }
-
-    private func triggerFailHaptic() {
-        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
-        let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.75)
-        let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.55)
-        let event = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity, sharpness], relativeTime: 0)
-
-        do {
-            try hapticEngine?.start()
-            let pattern = try CHHapticPattern(events: [event], parameters: [])
-            let player = try hapticEngine?.makePlayer(with: pattern)
-            try player?.start(atTime: 0)
-        } catch {
-            // Do not fail the interaction when haptics are unavailable.
-        }
-    }
+    // MARK: - Analysis Slot
 
     private func claimAnalysisSlot() -> Bool {
         analysisStateQueue.sync {
@@ -492,6 +395,8 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
         }
     }
 }
+
+// MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
 
 extension CameraAnalyzerViewModel: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
