@@ -89,6 +89,7 @@ final class UnseenViewModel: NSObject, ObservableObject {
     @Published var statusText: String = "카메라 준비 중..."
     @Published var permissionDenied = false
     @Published var useSampleFallback = false
+    @Published var isFrozen = false
     @Published var inspection: ColorInspection?
 
     private let session = AVCaptureSession()
@@ -522,7 +523,7 @@ final class UnseenViewModel: NSObject, ObservableObject {
 
 extension UnseenViewModel: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        guard !useSampleFallback else { return }
+        guard !useSampleFallback, !isFrozen else { return }
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
 
         autoreleasepool {
@@ -545,6 +546,7 @@ extension UnseenViewModel: AVCaptureVideoDataOutputSampleBufferDelegate {
 // MARK: - UI
 struct ContentView: View {
     @StateObject private var vm = UnseenViewModel()
+    @State private var showEducationSheet = false
 
     var body: some View {
         ScrollView {
@@ -570,6 +572,9 @@ struct ContentView: View {
         }
         .sheet(item: $vm.inspection) { inspection in
             ColorInspectionSheet(inspection: inspection)
+        }
+        .sheet(isPresented: $showEducationSheet) {
+            EducationCardsSheet()
         }
     }
 
@@ -683,6 +688,30 @@ struct ContentView: View {
             Text("화면을 탭하면 색상 상세/대체 색상이 뜹니다.")
                 .font(.system(size: 12))
                 .foregroundStyle(UnseenTheme.dim)
+
+            HStack(spacing: 8) {
+                Capsule()
+                    .fill(UnseenTheme.border)
+                    .frame(width: 34, height: 4)
+                Text("위로 스와이프하면 교육 카드")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(UnseenTheme.dim)
+                Spacer()
+                Button("열기") {
+                    showEducationSheet = true
+                }
+                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .foregroundStyle(UnseenTheme.accent)
+            }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 16)
+                    .onEnded { value in
+                        if value.translation.height < -20 {
+                            showEducationSheet = true
+                        }
+                    }
+            )
         }
         .padding(16)
         .background(UnseenTheme.surface)
@@ -708,6 +737,20 @@ struct ContentView: View {
 
             Toggle("텍스트 인식 + WCAG 대비 분석", isOn: $vm.analyzeText)
                 .tint(UnseenTheme.accent)
+
+            Button {
+                vm.isFrozen.toggle()
+                if vm.isFrozen {
+                    vm.statusText = "프레임 고정됨"
+                } else {
+                    vm.statusText = vm.useSampleFallback ? "샘플 모드" : "실시간 카메라 분석 중"
+                }
+            } label: {
+                Label(vm.isFrozen ? "분석 재개" : "프레임 고정", systemImage: vm.isFrozen ? "play.fill" : "pause.fill")
+                    .font(.system(size: 12, weight: .semibold))
+            }
+            .buttonStyle(.bordered)
+            .tint(UnseenTheme.accent)
 
             HStack(spacing: 10) {
                 Text(vm.statusText)
@@ -753,6 +796,26 @@ struct ContentView: View {
                     .font(.system(size: 13))
                     .foregroundStyle(UnseenTheme.dim)
             } else {
+                let failCount = vm.findings.filter { !$0.pass }.count
+                let worstRatio = vm.findings.map(\.ratio).min() ?? 0
+
+                HStack(spacing: 8) {
+                    Text("\(failCount == 0 ? "ALL PASS" : "FAIL \(failCount)")")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(failCount == 0 ? UnseenTheme.green : UnseenTheme.red)
+                        .clipShape(Capsule())
+
+                    Text("worst \(String(format: "%.2f", worstRatio))")
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(UnseenTheme.dim)
+
+                    Spacer()
+                }
+                .padding(.bottom, 2)
+
                 ForEach(vm.findings.prefix(5)) { finding in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(finding.text)
@@ -936,6 +999,37 @@ private struct EducationCard: View {
         .padding(12)
         .background(UnseenTheme.surface2)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
+private struct EducationCardsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("디자이너를 위한 접근성 카드")
+                        .font(.system(size: 20, weight: .regular, design: .serif))
+                        .foregroundStyle(UnseenTheme.text)
+
+                    EducationCard(title: "규칙 1", body: "색만으로 상태를 전달하지 말고 아이콘·텍스트를 함께 사용하세요.")
+                    EducationCard(title: "규칙 2", body: "일반 텍스트 대비 4.5:1 이상(큰 텍스트 3:1 이상)을 기본으로 점검하세요.")
+                    EducationCard(title: "규칙 3", body: "초록/빨강 쌍은 대체 색상(주황/파랑) 조합을 우선 고려하세요.")
+                    EducationCard(title: "규칙 4", body: "실기기 조명/거리 환경에서 마지막 검수를 반드시 수행하세요.")
+                    EducationCard(title: "규칙 5", body: "최종 제출물에는 접근성 검수 과정을 명시해 신뢰도를 높이세요.")
+                }
+                .padding(20)
+            }
+            .background(UnseenTheme.bg.ignoresSafeArea())
+            .navigationTitle("교육 카드")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("닫기") { dismiss() }
+                }
+            }
+        }
     }
 }
 
