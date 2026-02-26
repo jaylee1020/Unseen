@@ -35,12 +35,14 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
     private let output = AVCaptureVideoDataOutput()
     private let processingQueue = DispatchQueue(label: "unseen.camera.processing", qos: .userInitiated)
     private let visionQueue = DispatchQueue(label: "unseen.vision.processing", qos: .utility)
+    private let analysisStateQueue = DispatchQueue(label: "unseen.vision.state")
     private let context = CIContext(options: nil)
 
     private var configured = false
     private var frameCounter = 0
     private var lastCIImage: CIImage?
     private var hapticEngine: CHHapticEngine?
+    private var isAnalyzingFrame = false
 
     init(simulationEngine: SimulationEngine = CISimulationEngine()) {
         self.simulationEngine = simulationEngine
@@ -195,8 +197,15 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
         let simulated = simulationEngine.simulate(sampleImage, mode: mode)
         publishFrame(simulated)
 
-        if analyzeText, let cg = context.createCGImage(simulated, from: simulated.extent) {
-            runTextAnalysis(cgImage: cg, sourceImage: simulated)
+        guard analyzeText else { return }
+        guard claimAnalysisSlot() else { return }
+        guard let cg = context.createCGImage(simulated, from: simulated.extent) else {
+            releaseAnalysisSlot()
+            return
+        }
+
+        visionQueue.async { [weak self] in
+            self?.runTextAnalysis(cgImage: cg, sourceImage: simulated)
         }
     }
 
@@ -255,6 +264,8 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
     }
 
     private func runTextAnalysis(cgImage: CGImage, sourceImage: CIImage) {
+        defer { releaseAnalysisSlot() }
+
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .fast
         request.usesLanguageCorrection = false
@@ -311,8 +322,14 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
         )
         guard !imgRect.isEmpty else { return nil }
 
-        let fgRect = imgRect.insetBy(dx: max(1, imgRect.width * 0.22), dy: max(1, imgRect.height * 0.25))
-        let bgRect = imgRect.insetBy(dx: -max(4, imgRect.width * 0.26), dy: -max(4, imgRect.height * 0.38))
+        let fgRect = imgRect.insetBy(
+            dx: max(1, imgRect.width * AnalysisConstants.fgInsetXRatio),
+            dy: max(1, imgRect.height * AnalysisConstants.fgInsetYRatio)
+        )
+        let bgRect = imgRect.insetBy(
+            dx: -max(4, imgRect.width * AnalysisConstants.bgInsetXRatio),
+            dy: -max(4, imgRect.height * AnalysisConstants.bgInsetYRatio)
+        )
 
         guard let fg = averageColor(in: image, rect: fgRect),
               let bg = averageColor(in: image, rect: bgRect) else { return nil }
@@ -458,6 +475,22 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
             // Do not fail the interaction when haptics are unavailable.
         }
     }
+
+    private func claimAnalysisSlot() -> Bool {
+        analysisStateQueue.sync {
+            if isAnalyzingFrame {
+                return false
+            }
+            isAnalyzingFrame = true
+            return true
+        }
+    }
+
+    private func releaseAnalysisSlot() {
+        analysisStateQueue.async { [weak self] in
+            self?.isAnalyzingFrame = false
+        }
+    }
 }
 
 extension CameraAnalyzerViewModel: AVCaptureVideoDataOutputSampleBufferDelegate {
@@ -473,7 +506,11 @@ extension CameraAnalyzerViewModel: AVCaptureVideoDataOutputSampleBufferDelegate 
 
             frameCounter += 1
             guard analyzeText, frameCounter % AnalysisConstants.ocrFrameInterval == 0 else { return }
-            guard let cg = context.createCGImage(simulated, from: simulated.extent) else { return }
+            guard claimAnalysisSlot() else { return }
+            guard let cg = context.createCGImage(simulated, from: simulated.extent) else {
+                releaseAnalysisSlot()
+                return
+            }
 
             visionQueue.async { [weak self] in
                 self?.runTextAnalysis(cgImage: cg, sourceImage: simulated)

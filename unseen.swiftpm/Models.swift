@@ -50,4 +50,8 @@ enum AnalysisConstants {
     static let passThreshold: Double = 4.5
     static let minOverlayEdge: CGFloat = 10
     static let tapSampleSize: CGFloat = 12
+    static let fgInsetXRatio: CGFloat = 0.22
+    static let fgInsetYRatio: CGFloat = 0.25
+    static let bgInsetXRatio: CGFloat = 0.26
+    static let bgInsetYRatio: CGFloat = 0.38
 }
