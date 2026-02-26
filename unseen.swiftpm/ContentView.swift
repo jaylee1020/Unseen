@@ -555,6 +555,7 @@ struct ContentView: View {
                 findingsSection
                 whyAppSection
                 demoFlowSection
+                educationCardsSection
             }
             .padding(.horizontal, 20)
             .padding(.top, 24)
@@ -847,6 +848,25 @@ struct ContentView: View {
                 .stroke(UnseenTheme.border, lineWidth: 1)
         }
     }
+
+    private var educationCardsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("quick education cards")
+                .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                .foregroundStyle(UnseenTheme.accent)
+
+            EducationCard(title: "색에만 의존하지 않기", body: "정답/오답, 상태값 전달 시 색 + 아이콘 + 텍스트를 함께 사용하세요.")
+            EducationCard(title: "WCAG 대비 기준", body: "일반 텍스트는 4.5:1 이상, 큰 텍스트는 3:1 이상을 권장합니다.")
+            EducationCard(title: "실기기 검수", body: "인쇄물/프로젝터/실내 조명 환경에서 최종 점검해야 실제 가독성을 보장할 수 있습니다.")
+        }
+        .padding(16)
+        .background(UnseenTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(UnseenTheme.border, lineWidth: 1)
+        }
+    }
 }
 
 private struct SmallCard: View {
@@ -894,6 +914,26 @@ private struct DemoStep: View {
             Spacer(minLength: 0)
         }
         .padding(10)
+        .background(UnseenTheme.surface2)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
+private struct EducationCard: View {
+    let title: String
+    let body: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(UnseenTheme.text)
+            Text(body)
+                .font(.system(size: 12))
+                .foregroundStyle(UnseenTheme.dim)
+                .lineSpacing(2)
+        }
+        .padding(12)
         .background(UnseenTheme.surface2)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
