@@ -260,7 +260,7 @@ struct CameraScreen: View {
                 }
                 .padding(.bottom, 2)
 
-                ForEach(vm.findings.prefix(5)) { finding in
+                ForEach(vm.findings) { finding in
                     VStack(alignment: .leading, spacing: 5) {
                         Text(finding.text)
                             .font(.subheadline.weight(.semibold))

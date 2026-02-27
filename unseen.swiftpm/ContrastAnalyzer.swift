@@ -9,6 +9,7 @@ struct ContrastEstimate {
 
 final class ContrastAnalyzer {
     private let context: CIContext
+    private let colorSpace = CGColorSpaceCreateDeviceRGB()
 
     init(context: CIContext) {
         self.context = context
@@ -56,7 +57,7 @@ final class ContrastAnalyzer {
             rowBytes: 4,
             bounds: CGRect(x: 0, y: 0, width: 1, height: 1),
             format: .RGBA8,
-            colorSpace: CGColorSpaceCreateDeviceRGB()
+            colorSpace: colorSpace
         )
 
         return SIMD3(

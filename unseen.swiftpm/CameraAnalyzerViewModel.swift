@@ -8,9 +8,11 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
     @Published var frame: CGImage?
     @Published var imageSize: CGSize = .zero
     @Published var findings: [ContrastFinding] = []
-    @Published var mode: VisionMode = .deuteranopia {
+    @Published var mode: VisionMode = .normal {
         didSet {
-            statusText = "Mode: \(mode.rawValue)"
+            if findings.isEmpty {
+                statusText = "Mode: \(mode.shortLabel)"
+            }
             if useSampleFallback {
                 renderSampleFrame()
             }
@@ -48,7 +50,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
 
     init(simulationEngine: SimulationEngine = CISimulationEngine()) {
         self.simulationEngine = simulationEngine
-        self.contrastAnalyzer = ContrastAnalyzer(context: CIContext(options: nil))
+        self.contrastAnalyzer = ContrastAnalyzer(context: context)
         super.init()
     }
 
@@ -305,7 +307,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
             }
         } catch {
             DispatchQueue.main.async { [weak self] in
-                self?.statusText = "Text analysis error: \(error.localizedDescription)"
+                self?.statusText = "Text recognition unavailable"
             }
         }
     }

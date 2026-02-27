@@ -9,16 +9,25 @@ protocol SimulationEngine {
 }
 
 final class CISimulationEngine: SimulationEngine {
+    private var filterCache: [VisionMode: CIColorMatrix] = [:]
+
     func simulate(_ image: CIImage, mode: VisionMode) -> CIImage {
         guard mode != .normal else { return image }
         let m = modeMatrix(for: mode)
 
-        let filter = CIFilter.colorMatrix()
+        let filter: CIColorMatrix
+        if let cached = filterCache[mode] {
+            filter = cached
+        } else {
+            let f = CIFilter.colorMatrix()
+            f.rVector = CIVector(x: m[0][0], y: m[0][1], z: m[0][2], w: 0)
+            f.gVector = CIVector(x: m[1][0], y: m[1][1], z: m[1][2], w: 0)
+            f.bVector = CIVector(x: m[2][0], y: m[2][1], z: m[2][2], w: 0)
+            f.aVector = CIVector(x: 0, y: 0, z: 0, w: 1)
+            filterCache[mode] = f
+            filter = f
+        }
         filter.inputImage = image
-        filter.rVector = CIVector(x: m[0][0], y: m[0][1], z: m[0][2], w: 0)
-        filter.gVector = CIVector(x: m[1][0], y: m[1][1], z: m[1][2], w: 0)
-        filter.bVector = CIVector(x: m[2][0], y: m[2][1], z: m[2][2], w: 0)
-        filter.aVector = CIVector(x: 0, y: 0, z: 0, w: 1)
         return filter.outputImage ?? image
     }
 

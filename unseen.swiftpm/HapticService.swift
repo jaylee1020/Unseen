@@ -18,13 +18,12 @@ final class HapticService {
     }
 
     func triggerFail() {
-        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        guard engine != nil else { return }
         let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.75)
         let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.55)
         let event = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity, sharpness], relativeTime: 0)
 
         do {
-            try engine?.start()
             let pattern = try CHHapticPattern(events: [event], parameters: [])
             let player = try engine?.makePlayer(with: pattern)
             try player?.start(atTime: 0)
