@@ -12,9 +12,6 @@ struct CameraScreen: View {
                 cameraSection
                 controlsSection
                 findingsSection
-                whyAppSection
-                demoFlowSection
-                educationCardsSection
             }
             .padding(.horizontal, 20)
             .padding(.top, 24)
@@ -32,36 +29,20 @@ struct CameraScreen: View {
     }
 
     private var hero: some View {
-        VStack(spacing: 10) {
-            Text("SSC 2026 — Refined Idea")
-                .font(.caption2.monospaced().weight(.semibold))
-                .tracking(2.2)
-                .textCase(.uppercase)
-                .foregroundStyle(UnseenTheme.accent)
-                .padding(.vertical, 5)
-                .padding(.horizontal, 14)
-                .background(UnseenTheme.accentBackground)
-                .clipShape(Capsule())
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Unseen")
+                    .font(.system(.title, design: .serif, weight: .regular))
+                    .foregroundStyle(UnseenTheme.text)
 
-            Text("Unseen")
-                .font(.system(.largeTitle, design: .serif, weight: .regular))
-                .foregroundStyle(UnseenTheme.text)
-                .minimumScaleFactor(0.7)
-
-            Text("See what 300 million people can't.")
-                .font(.system(.title3, design: .serif, weight: .regular))
-                .italic()
-                .foregroundStyle(UnseenTheme.accent)
-                .multilineTextAlignment(.center)
-
-            Text("An app that cannot exist without a camera. Point it at real-world items — posters, signs, textbooks, UI — and get real-time color vision simulation + WCAG contrast diagnostics.")
-                .font(.callout)
-                .foregroundStyle(UnseenTheme.dim)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 520)
+                Text("See what 300 million people can't.")
+                    .font(.subheadline)
+                    .italic()
+                    .foregroundStyle(UnseenTheme.accent)
+            }
+            Spacer()
         }
-        .frame(maxWidth: .infinity)
-        .padding(22)
+        .padding(16)
         .background(UnseenTheme.surface)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
@@ -322,109 +303,6 @@ struct CameraScreen: View {
         .unseenCard()
     }
 
-    private var whyAppSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Why this must be an app")
-                .font(.caption.monospaced().weight(.semibold))
-                .foregroundStyle(UnseenTheme.accent)
-
-            Text("An app that cannot exist without a camera")
-                .font(.system(.title2, design: .serif, weight: .regular))
-                .foregroundStyle(UnseenTheme.text)
-
-            Text("Real-world items need instant diagnosis on the spot — web tools or Photoshop filters can't replace that. The key value is a repeatable inspection tool for designers and educators.")
-                .font(.callout)
-                .foregroundStyle(UnseenTheme.dim)
-                .lineSpacing(2)
-
-            HStack(spacing: 10) {
-                SmallCard(title: "Real-World", content: "Diagnose physical accessibility, not just digital files")
-                SmallCard(title: "Real-Time", content: "Instant results as you point")
-                SmallCard(title: "Repeatable", content: "Build accessibility checks into your routine")
-            }
-        }
-        .unseenCard()
-    }
-
-    private var demoFlowSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("3-min demo flow")
-                .font(.caption.monospaced().weight(.semibold))
-                .foregroundStyle(UnseenTheme.accent)
-
-            DemoStep(time: "0:00-0:15", title: "App Launch", detail: "One-line intro, then straight to camera")
-            DemoStep(time: "0:15-0:50", title: "CVD Simulation", detail: "Toggle modes to experience red-green conflict")
-            DemoStep(time: "0:50-1:40", title: "PASS/FAIL Diagnosis", detail: "Auto text recognition + WCAG contrast check")
-            DemoStep(time: "1:40-2:20", title: "Tap Detail Analysis", detail: "HEX/RGB + per-mode conversion + alternative colors")
-            DemoStep(time: "2:20-3:00", title: "Repeatable Value", detail: "Connect to real design review workflows")
-        }
-        .unseenCard()
-    }
-
-    private var educationCardsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Quick Education Cards")
-                .font(.caption.monospaced().weight(.semibold))
-                .foregroundStyle(UnseenTheme.accent)
-
-            EducationCard(title: "Don't rely on color alone", content: "Use icons and text alongside color to convey status like pass/fail.")
-            EducationCard(title: "WCAG Contrast Baseline", content: "Normal text requires 4.5:1 ratio; large text requires 3:1 minimum.")
-            EducationCard(title: "Test on real devices", content: "Always do a final check under real lighting, distance, and print conditions.")
-        }
-        .unseenCard()
-    }
-}
-
-private struct SmallCard: View {
-    let title: String
-    let content: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(UnseenTheme.text)
-                .lineLimit(2)
-            Text(content)
-                .font(.caption)
-                .foregroundStyle(UnseenTheme.dim)
-                .lineSpacing(2)
-                .lineLimit(3)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(10)
-        .background(UnseenTheme.surface2)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-    }
-}
-
-private struct DemoStep: View {
-    let time: String
-    let title: String
-    let detail: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Text(time)
-                .font(.caption2.monospaced().weight(.semibold))
-                .foregroundStyle(UnseenTheme.accent)
-                .frame(width: 74, alignment: .leading)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(UnseenTheme.text)
-                Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(UnseenTheme.dim)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(10)
-        .background(UnseenTheme.surface2)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-    }
 }
 
 struct EducationCard: View {
