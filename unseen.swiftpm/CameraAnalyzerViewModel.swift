@@ -44,6 +44,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
     /// Accessed only on `processingQueue` — no additional synchronization needed.
     private var frameCounter = 0
     private var lastCIImage: CIImage?
+    private var cachedSampleBase: CIImage?
     private var isAnalyzingFrame = false
 
     init(simulationEngine: SimulationEngine = CISimulationEngine()) {
@@ -189,19 +190,23 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
     // MARK: - Frame Processing
 
     private func renderSampleFrame() {
-        guard let sampleImage = generateSampleCIImage() else { return }
-        let simulated = simulationEngine.simulate(sampleImage, mode: mode)
+        let base: CIImage
+        if let cached = cachedSampleBase {
+            base = cached
+        } else {
+            guard let generated = generateSampleCIImage() else { return }
+            cachedSampleBase = generated
+            base = generated
+        }
+
+        let simulated = simulationEngine.simulate(base, mode: mode)
         publishFrame(simulated)
 
         guard analyzeText else { return }
         guard claimAnalysisSlot() else { return }
-        guard let cg = context.createCGImage(simulated, from: simulated.extent) else {
-            releaseAnalysisSlot()
-            return
-        }
 
         visionQueue.async { [weak self] in
-            self?.runTextAnalysis(cgImage: cg, sourceImage: simulated)
+            self?.runTextAnalysis(sourceImage: simulated)
         }
     }
 
@@ -242,7 +247,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
                 .font: UIFont.systemFont(ofSize: 34, weight: .medium),
                 .foregroundColor: UIColor(white: 0.88, alpha: 1)
             ]
-            NSString(string: "Notice: Deadline Feb 28").draw(at: CGPoint(x: 120, y: 430), withAttributes: bodyAttrs)
+            NSString(string: "Color alone should not convey meaning").draw(at: CGPoint(x: 120, y: 430), withAttributes: bodyAttrs)
             NSString(string: "Accessibility contrast check needed").draw(at: CGPoint(x: 120, y: 485), withAttributes: bodyAttrs)
         }
 
@@ -261,7 +266,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
 
     // MARK: - Text Analysis
 
-    private func runTextAnalysis(cgImage: CGImage, sourceImage: CIImage) {
+    private func runTextAnalysis(sourceImage: CIImage) {
         defer { releaseAnalysisSlot() }
 
         let request = VNRecognizeTextRequest()
@@ -271,7 +276,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
         request.recognitionLanguages = ["ko-KR", "en-US"]
 
         do {
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+            let handler = VNImageRequestHandler(ciImage: sourceImage, options: [:])
             try handler.perform([request])
 
             let observations = request.results ?? []
@@ -363,6 +368,7 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
     }
 
     private func fittedRect(for imageSize: CGSize, in viewSize: CGSize) -> CGRect {
+        guard imageSize.height > 0, viewSize.height > 0 else { return .zero }
         let imageAspect = imageSize.width / imageSize.height
         let viewAspect = viewSize.width / viewSize.height
 
@@ -390,8 +396,8 @@ final class CameraAnalyzerViewModel: NSObject, ObservableObject {
     }
 
     private func releaseAnalysisSlot() {
-        analysisStateQueue.async { [weak self] in
-            self?.isAnalyzingFrame = false
+        analysisStateQueue.sync {
+            isAnalyzingFrame = false
         }
     }
 }
@@ -412,13 +418,9 @@ extension CameraAnalyzerViewModel: AVCaptureVideoDataOutputSampleBufferDelegate 
             frameCounter += 1
             guard analyzeText, frameCounter % AnalysisConstants.ocrFrameInterval == 0 else { return }
             guard claimAnalysisSlot() else { return }
-            guard let cg = context.createCGImage(simulated, from: simulated.extent) else {
-                releaseAnalysisSlot()
-                return
-            }
 
             visionQueue.async { [weak self] in
-                self?.runTextAnalysis(cgImage: cg, sourceImage: simulated)
+                self?.runTextAnalysis(sourceImage: simulated)
             }
         }
     }

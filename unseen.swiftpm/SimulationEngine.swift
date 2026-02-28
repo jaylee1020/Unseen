@@ -30,6 +30,11 @@ final class CISimulationEngine: SimulationEngine {
         return SIMD3(max(0, min(1, r)), max(0, min(1, g)), max(0, min(1, b)))
     }
 
+    // Brettel, Viénot & Mollon (1997) CVD simulation matrices,
+    // corrected for the sRGB color space. Each 3×3 matrix projects
+    // trichromatic RGB values onto the reduced gamut perceived by
+    // the corresponding dichromatic observer.
+
     private func modeMatrix(for mode: VisionMode) -> [[Double]] {
         switch mode {
         case .normal:
@@ -39,18 +44,21 @@ final class CISimulationEngine: SimulationEngine {
                 [0, 0, 1]
             ]
         case .protanopia:
+            // Absence of long-wavelength (red) cones
             return [
                 [0.56667, 0.43333, 0.0],
                 [0.55833, 0.44167, 0.0],
                 [0.0, 0.24167, 0.75833]
             ]
         case .deuteranopia:
+            // Absence of medium-wavelength (green) cones
             return [
                 [0.625, 0.375, 0.0],
                 [0.70, 0.30, 0.0],
                 [0.0, 0.30, 0.70]
             ]
         case .tritanopia:
+            // Absence of short-wavelength (blue) cones
             return [
                 [0.95, 0.05, 0.0],
                 [0.0, 0.43333, 0.56667],

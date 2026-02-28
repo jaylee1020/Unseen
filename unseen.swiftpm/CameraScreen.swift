@@ -12,6 +12,7 @@ struct CameraScreen: View {
                 cameraSection
                 controlsSection
                 findingsSection
+                educationCardsSection
             }
             .padding(.horizontal, 20)
             .padding(.top, 24)
@@ -30,10 +31,16 @@ struct CameraScreen: View {
 
     private var hero: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Unseen")
-                    .font(.system(.title, design: .serif, weight: .regular))
-                    .foregroundStyle(UnseenTheme.text)
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Swift Student Challenge 2026")
+                    .font(.caption2.monospaced().weight(.semibold))
+                    .tracking(2.2)
+                    .textCase(.uppercase)
+                    .foregroundStyle(UnseenTheme.accent)
+                    .padding(.vertical, 5)
+                    .padding(.horizontal, 14)
+                    .background(UnseenTheme.accentBackground)
+                    .clipShape(Capsule())
 
                 Text("See what 300 million people can't.")
                     .font(.subheadline)
@@ -59,7 +66,7 @@ struct CameraScreen: View {
                     .foregroundStyle(UnseenTheme.accent)
                 Spacer()
                 if vm.useSampleFallback {
-                    Text("DEMO SAMPLE")
+                    Text("SAMPLE MODE")
                         .font(.caption2.monospaced().weight(.semibold))
                         .foregroundStyle(UnseenTheme.blue)
                         .padding(.horizontal, 8)
@@ -303,6 +310,18 @@ struct CameraScreen: View {
         .unseenCard()
     }
 
+    private var educationCardsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Quick Education Cards")
+                .font(.caption.monospaced().weight(.semibold))
+                .foregroundStyle(UnseenTheme.accent)
+
+            EducationCard(title: "Don't rely on color alone", content: "Use icons and text alongside color to convey status like pass/fail.")
+            EducationCard(title: "WCAG Contrast Baseline", content: "Normal text requires 4.5:1 ratio; large text requires 3:1 minimum.")
+            EducationCard(title: "Test on real devices", content: "Always do a final check under real lighting, distance, and print conditions.")
+        }
+        .unseenCard()
+    }
 }
 
 struct EducationCard: View {
