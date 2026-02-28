@@ -7,92 +7,97 @@ struct ColorInspectionSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Selected Color")
-                            .font(.caption.monospaced().weight(.semibold))
-                            .foregroundStyle(UnseenTheme.accent)
+                GlassEffectContainer(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 14) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Selected Color")
+                                .font(.caption.monospaced().weight(.semibold))
+                                .foregroundStyle(UnseenTheme.accent)
 
-                        HStack(spacing: 12) {
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color(hex: inspection.pickedHex) ?? .clear)
-                                .frame(width: 54, height: 54)
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(UnseenTheme.border, lineWidth: 1)
-                                }
-                                .accessibilityHidden(true)
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(inspection.pickedHex)
-                                    .font(.title3.monospaced().weight(.semibold))
-                                Text("RGB \(inspection.pickedRGB)")
-                                    .font(.caption.monospaced())
-                                    .foregroundStyle(UnseenTheme.dim)
-                            }
-                        }
-                    }
-
-                    Divider().overlay(UnseenTheme.border)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Per-Mode Transform")
-                            .font(.caption.monospaced().weight(.semibold))
-                            .foregroundStyle(UnseenTheme.accent)
-
-                        ForEach(inspection.modeSamples, id: \.0) { mode, hex in
-                            HStack {
-                                Text(mode.rawValue)
-                                    .font(.subheadline.weight(.medium))
-                                Spacer()
-                                Text(hex)
-                                    .font(.caption.monospaced())
-                                    .foregroundStyle(UnseenTheme.dim)
-                            }
-                            .padding(.vertical, 4)
-                            .accessibilityElement(children: .combine)
-                            .accessibilityLabel("\(mode.rawValue) mode color")
-                            .accessibilityValue(hex)
-                        }
-                    }
-
-                    Divider().overlay(UnseenTheme.border)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Suggested Alternatives")
-                            .font(.caption.monospaced().weight(.semibold))
-                            .foregroundStyle(UnseenTheme.accent)
-
-                        ForEach(inspection.suggestions) { suggestion in
-                            HStack(spacing: 10) {
-                                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .fill(Color(hex: suggestion.hex) ?? .clear)
-                                    .frame(width: 26, height: 26)
+                            HStack(spacing: 12) {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(Color(hex: inspection.pickedHex) ?? .clear)
+                                    .frame(width: 54, height: 54)
                                     .overlay {
-                                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
                                             .stroke(UnseenTheme.border, lineWidth: 1)
                                     }
                                     .accessibilityHidden(true)
 
-                                Text(suggestion.role)
-                                    .font(.subheadline.weight(.medium))
-
-                                Spacer()
-
-                                Text(suggestion.hex)
-                                    .font(.caption.monospaced())
-                                    .foregroundStyle(UnseenTheme.dim)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(inspection.pickedHex)
+                                        .font(.title3.monospaced().weight(.semibold))
+                                    Text("RGB \(inspection.pickedRGB)")
+                                        .font(.caption.monospaced())
+                                        .foregroundStyle(UnseenTheme.dim)
+                                }
                             }
-                            .padding(.vertical, 2)
-                            .accessibilityElement(children: .combine)
-                            .accessibilityLabel("\(suggestion.role) suggested color")
-                            .accessibilityValue(suggestion.hex)
+                        }
+
+                        Divider().overlay(UnseenTheme.border)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Per-Mode Transform")
+                                .font(.caption.monospaced().weight(.semibold))
+                                .foregroundStyle(UnseenTheme.accent)
+
+                            ForEach(inspection.modeSamples, id: \.0) { mode, hex in
+                                HStack {
+                                    Text(mode.rawValue)
+                                        .font(.subheadline.weight(.medium))
+                                    Spacer()
+                                    Text(hex)
+                                        .font(.caption.monospaced())
+                                        .foregroundStyle(UnseenTheme.dim)
+                                }
+                                .padding(.vertical, 4)
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel("\(mode.rawValue) mode color")
+                                .accessibilityValue(hex)
+                            }
+                        }
+
+                        Divider().overlay(UnseenTheme.border)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Suggested Alternatives")
+                                .font(.caption.monospaced().weight(.semibold))
+                                .foregroundStyle(UnseenTheme.accent)
+
+                            ForEach(inspection.suggestions) { suggestion in
+                                HStack(spacing: 10) {
+                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                        .fill(Color(hex: suggestion.hex) ?? .clear)
+                                        .frame(width: 26, height: 26)
+                                        .overlay {
+                                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                                .stroke(UnseenTheme.border, lineWidth: 1)
+                                        }
+                                        .accessibilityHidden(true)
+
+                                    Text(suggestion.role)
+                                        .font(.subheadline.weight(.medium))
+
+                                    Spacer()
+
+                                    Text(suggestion.hex)
+                                        .font(.caption.monospaced())
+                                        .foregroundStyle(UnseenTheme.dim)
+                                }
+                                .padding(.vertical, 2)
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel("\(suggestion.role) suggested color")
+                                .accessibilityValue(suggestion.hex)
+                            }
                         }
                     }
+                    .padding(20)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
                 }
-                .padding(20)
             }
-            .background(UnseenTheme.bg.ignoresSafeArea())
+            .background { UnseenTheme.meshBackground }
             .navigationTitle("Color Detail")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

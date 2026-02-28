@@ -7,18 +7,20 @@ struct CameraScreen: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                hero
-                cameraSection
-                controlsSection
-                findingsSection
-                educationCardsSection
+            GlassEffectContainer(spacing: 10) {
+                VStack(alignment: .leading, spacing: 18) {
+                    hero
+                    cameraSection
+                    controlsSection
+                    findingsSection
+                    educationCardsSection
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
+                .padding(.bottom, 80)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 24)
-            .padding(.bottom, 80)
         }
-        .background(UnseenTheme.bg.ignoresSafeArea())
+        .background { UnseenTheme.meshBackground }
         .task { vm.start() }
         .onDisappear { vm.stop() }
         .sheet(item: $vm.inspection) { inspection in
@@ -39,8 +41,7 @@ struct CameraScreen: View {
                     .foregroundStyle(UnseenTheme.accent)
                     .padding(.vertical, 5)
                     .padding(.horizontal, 14)
-                    .background(UnseenTheme.accentBackground)
-                    .clipShape(Capsule())
+                    .glassEffect(.regular.tint(UnseenTheme.accentBackground), in: Capsule())
 
                 Text("See what 300 million people can't.")
                     .font(.subheadline)
@@ -50,12 +51,7 @@ struct CameraScreen: View {
             Spacer()
         }
         .padding(16)
-        .background(UnseenTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(UnseenTheme.border, lineWidth: 1)
-        }
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private var cameraSection: some View {
@@ -71,8 +67,7 @@ struct CameraScreen: View {
                         .foregroundStyle(UnseenTheme.blue)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(UnseenTheme.blueBackground)
-                        .clipShape(Capsule())
+                        .glassEffect(.regular.tint(UnseenTheme.blueBackground), in: Capsule())
                 }
             }
 
@@ -105,8 +100,10 @@ struct CameraScreen: View {
                                     .foregroundStyle(.white)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 3)
-                                    .background(finding.pass ? UnseenTheme.green : UnseenTheme.red)
-                                    .clipShape(Capsule())
+                                    .glassEffect(
+                                        .regular.tint(finding.pass ? UnseenTheme.green : UnseenTheme.red),
+                                        in: Capsule()
+                                    )
                                     .offset(x: 4, y: 4)
                             }
                             .frame(width: rect.width, height: rect.height)
@@ -130,10 +127,6 @@ struct CameraScreen: View {
             }
             .frame(height: 300)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(UnseenTheme.border, lineWidth: 1)
-            }
 
             Text("Tap the view to inspect color details and alternatives.")
                 .font(.footnote)
@@ -197,7 +190,7 @@ struct CameraScreen: View {
                 Label(vm.isFrozen ? "Resume Analysis" : "Freeze Frame", systemImage: vm.isFrozen ? "play.fill" : "pause.fill")
                     .font(.subheadline.weight(.semibold))
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.glass)
             .tint(UnseenTheme.accent)
             .accessibilityHint("Freeze the current frame for detailed inspection.")
 
@@ -255,8 +248,10 @@ struct CameraScreen: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(failCount == 0 ? UnseenTheme.green : UnseenTheme.red)
-                        .clipShape(Capsule())
+                        .glassEffect(
+                            .regular.tint(failCount == 0 ? UnseenTheme.green : UnseenTheme.red),
+                            in: Capsule()
+                        )
                         .accessibilityLabel(failCount == 0 ? "All passed" : "\(failCount) failed")
 
                     Text("worst \(String(format: "%.2f", displayRatio))")
@@ -281,8 +276,10 @@ struct CameraScreen: View {
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 7)
                                 .padding(.vertical, 3)
-                                .background(finding.pass ? UnseenTheme.green : UnseenTheme.red)
-                                .clipShape(Capsule())
+                                .glassEffect(
+                                    .regular.tint(finding.pass ? UnseenTheme.green : UnseenTheme.red),
+                                    in: Capsule()
+                                )
 
                             Text("contrast \(String(format: "%.2f", finding.ratio))")
                                 .font(.caption.monospaced().weight(.semibold))
@@ -299,8 +296,7 @@ struct CameraScreen: View {
                         }
                     }
                     .padding(10)
-                    .background(UnseenTheme.surface2)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .glassEffect(.clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("Text: \(finding.text)")
                     .accessibilityValue("\(finding.pass ? "Pass" : "Fail"), contrast \(String(format: "%.2f", finding.ratio))")
@@ -339,7 +335,6 @@ struct EducationCard: View {
                 .lineSpacing(2)
         }
         .padding(12)
-        .background(UnseenTheme.surface2)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .glassEffect(.clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }

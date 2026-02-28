@@ -4,12 +4,7 @@ struct UnseenCardStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(16)
-            .background(UnseenTheme.surface)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(UnseenTheme.border, lineWidth: 1)
-            }
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 
@@ -34,4 +29,21 @@ enum UnseenTheme {
     static let redBackground = Color(red: 253.0 / 255.0, green: 240.0 / 255.0, blue: 240.0 / 255.0)
     static let blue = Color(red: 29.0 / 255.0, green: 95.0 / 255.0, blue: 160.0 / 255.0)
     static let blueBackground = Color(red: 238.0 / 255.0, green: 244.0 / 255.0, blue: 251.0 / 255.0)
+
+    static var meshBackground: some View {
+        MeshGradient(
+            width: 3, height: 3,
+            points: [
+                [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
+                [0.0, 0.5], [0.5, 0.5], [1.0, 0.5],
+                [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
+            ],
+            colors: [
+                accentBackground, Color(white: 0.97), blueBackground,
+                Color(white: 0.98), bg, Color(white: 0.97),
+                greenBackground, Color(white: 0.96), accentBackground
+            ]
+        )
+        .ignoresSafeArea()
+    }
 }

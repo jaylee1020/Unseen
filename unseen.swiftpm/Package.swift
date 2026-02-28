@@ -6,7 +6,7 @@ import AppleProductTypes
 let package = Package(
     name: "Unseen",
     platforms: [
-        .iOS("18.0")
+        .iOS("26.0")
     ],
     products: [
         .iOSApplication(
